@@ -1,0 +1,1958 @@
+<!doctype html>
+<html lang="zh-CN" data-zcode-design>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>留任面试 · 模拟考场</title>
+<style>
+/* ============ tokens ============ */
+:root{
+  --bg:#ededed;            /* 微信聊天底 */
+  --page:#dcdcdc;          /* 桌面外围 */
+  --surface:#ffffff;
+  --surface-2:#f7f7f7;
+  --fg:#111111;
+  --muted:#5f5f5f;         /* 次要文字（≥4.5:1） */
+  --border:#dcdfe4;
+  --accent:#07c160;        /* 微信绿：进度/圆点/装饰 */
+  --accent-strong:#047c3e; /* 深绿：文字承载按钮（白字≥4.5:1） */
+  --accent-soft:#e8f7ee;
+  --bubble-self:#95ec69;
+  --bubble-other:#ffffff;
+  --warn:#b26a00;          /* 超时提醒文字（≥4.5:1） */
+  --warn-bg:#fff3e0;
+  --danger:#c22e2e;        /* 雷区（≥4.5:1） */
+  --danger-bg:#fdeceb;
+  --examiner:#2456a6;      /* 考官头像徽章 */
+  --radius-bubble:16px;
+  --radius-card:12px;
+  --radius-avatar:6px;
+  --font:-apple-system,"PingFang SC","HarmonyOS Sans SC","Source Han Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.2,0,0,1);
+}
+/* ============ reset / base ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{
+  min-height:100%;background:var(--page);color:var(--fg);
+  font-family:var(--font);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;border:0;background:none;cursor:pointer;color:inherit}
+input,textarea,select{font-family:inherit;color:inherit}
+svg{display:block}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
+/* ============ app shell ============ */
+.app{
+  position:relative;max-width:480px;min-height:100vh;min-height:100dvh;
+  margin:0 auto;background:var(--bg);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+@media (min-width:520px){
+  body{padding:20px 0}
+  .app{min-height:calc(100vh - 40px);min-height:calc(100dvh - 40px);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.14)}
+}
+.screen{display:none;flex:1;flex-direction:column;min-height:0}
+.screen.active{display:flex}
+/* ============ topbar ============ */
+.topbar{
+  flex:none;display:flex;align-items:center;gap:8px;
+  padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+}
+.topbar h1{font-size:17px;font-weight:600;text-align:center;flex:1;letter-spacing:.01em}
+.topbar h1 small{display:block;font-size:11px;font-weight:400;color:var(--muted);letter-spacing:.02em;line-height:1.3}
+.iconbtn{
+  flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;color:var(--fg);
+}
+.iconbtn:disabled{opacity:.35;cursor:not-allowed}
+.iconbtn svg{width:22px;height:22px}
+/* ============ buttons ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:48px;padding:0 20px;border-radius:10px;
+  font-size:16px;font-weight:600;letter-spacing:.02em;
+  background:var(--accent-strong);color:#fff;transition:opacity .15s var(--ease);
+}
+.btn:active{opacity:.8}
+.btn.ghost{background:var(--surface);color:var(--fg);border:1px solid var(--border)}
+.btn.block{width:100%}
+/* ============ start screen ============ */
+#screen-start{overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.hero{padding:8px 4px 16px}
+.hero h2{font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.hero p{margin-top:6px;font-size:13px;color:var(--muted);letter-spacing:.01em}
+.card{background:var(--surface);border-radius:var(--radius-card);padding:16px;margin-bottom:14px}
+.card h3{font-size:15px;font-weight:600;margin-bottom:10px;letter-spacing:.02em}
+.rule-list{list-style:none}
+.rule-list li{display:flex;gap:10px;padding:7px 0;font-size:14px;line-height:1.5;align-items:baseline}
+.rule-list .no{flex:none;width:18px;height:18px;border-radius:50%;background:var(--accent-soft);color:var(--accent-strong);font-family:var(--mono);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field>label{display:block;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;margin-bottom:8px}
+.field .in{flex:1;min-width:0;min-height:44px;border-radius:10px;border:1px solid var(--border);padding:0 14px;background:var(--surface-2);outline:none;font-size:14px}
+.field .in:focus{border-color:var(--accent-strong)}
+.ai-sec{font-size:12px;line-height:1.7;color:var(--muted);margin-bottom:12px;letter-spacing:.01em}
+.chev{width:16px;height:16px;transform:rotate(-90deg);transition:transform .2s var(--ease);color:var(--muted)}
+.chev.open{transform:rotate(90deg)}
+.topic-opt{display:block;width:100%;text-align:left;background:var(--surface-2);border:1.5px solid transparent;border-radius:10px;padding:12px 14px;margin-bottom:8px;transition:border-color .15s var(--ease),background .15s var(--ease)}
+.topic-opt:last-child{margin-bottom:0}
+.topic-opt[aria-pressed="true"]{border-color:var(--accent-strong);background:var(--accent-soft)}
+.topic-opt .t{display:block;font-size:15px;font-weight:600;line-height:1.4}
+.topic-opt .d{margin-top:2px;font-size:12px;color:var(--muted);letter-spacing:.01em}
+.seat-row{display:flex;align-items:center;gap:12px}
+.stepper{display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.stepper button{width:44px;height:44px;font-size:20px;color:var(--accent-strong)}
+.stepper button:disabled{opacity:.3}
+.stepper .val{width:52px;text-align:center;font-size:18px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:40px;padding:0 14px;border-radius:999px;background:var(--surface-2);border:1.5px solid transparent;font-size:14px;transition:border-color .15s var(--ease),background .15s var(--ease)}
+.chip[aria-pressed="true"]{border-color:var(--accent-strong);background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0}
+.switchrow .lab{font-size:14px}
+.switchrow .sub{font-size:12px;color:var(--muted);letter-spacing:.01em}
+.toggle{position:relative;width:52px;height:32px;flex:none;border-radius:16px;background:#ccc;transition:background .15s var(--ease)}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s var(--ease)}
+.toggle[aria-checked="true"]{background:var(--accent)}
+.toggle[aria-checked="true"]::after{transform:translateX(20px)}
+.notice{display:flex;gap:10px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5}
+.notice.warn{background:var(--warn-bg);color:var(--warn)}
+.notice.info{background:#e7f0fb;color:#1d4d8f}
+.notice svg{width:18px;height:18px;flex:none;margin-top:2px}
+.history{margin-top:4px}
+.history .item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.history .item:last-child{border-bottom:0}
+.history .score{margin-left:auto;font-size:17px;font-weight:600}
+.history .score.good{color:var(--accent-strong)}
+.history .score.low{color:var(--warn)}
+.history .empty{padding:14px 0;font-size:13px;color:var(--muted);text-align:center;letter-spacing:.01em}
+.foot-note{padding:14px 4px;font-size:11px;color:var(--muted);text-align:center;letter-spacing:.02em;line-height:1.6}
+/* ============ 考官画面（考场第一视角 · 漫画风） ============ */
+.stage-wrap{flex:none;padding:8px 10px 0;background:var(--bg)}
+.stage-wrap.off{display:none}
+.stage{border-radius:12px;overflow:hidden;border:2px solid var(--border);background:#e3e7e2}
+.stage svg{width:100%;height:auto;display:block}
+.head,.armR,.armL,.brows rect{transition:transform .45s var(--ease)}
+.armR{transform-origin:12% 8%;transform-box:fill-box}
+.armL{transform-origin:88% 8%;transform-box:fill-box}
+.head{transform-origin:50% 92%;transform-box:fill-box}
+.brows rect{transform-box:fill-box}
+.eyes-open{transform-box:fill-box;transform-origin:center;animation:blink 4.6s infinite}
+@keyframes blink{0%,91%,100%{transform:scaleY(1)}94.5%{transform:scaleY(.12)}}
+.eyes-open .pupil{transition:transform .35s var(--ease);transform-box:fill-box;transform-origin:center}
+.eyes-closed,.eyes-happy,.m-talk,.m-down,.m-smile,.m-yawn,.phoneG{opacity:0}
+.m-neutral{opacity:1}
+.tagR,.tagT{transition:.3s var(--ease)}
+.pen{opacity:0;transition:opacity .3s}
+.st-listen .m-smile,.st-idle .m-smile{opacity:1}
+.st-listen .m-neutral,.st-idle .m-neutral{opacity:0}
+.st-talk .m-talk{opacity:1;animation:talk .36s infinite alternate var(--ease);transform-box:fill-box;transform-origin:center}
+@keyframes talk{from{transform:scaleY(.55)}to{transform:scaleY(1.15)}}
+.st-nod .head{animation:nod 1.05s var(--ease) 2}
+@keyframes nod{0%,100%{transform:rotate(0)}45%{transform:rotate(7deg) translateY(2px)}}
+.st-nod .m-smile{opacity:1}
+.st-nod .m-neutral{opacity:0}
+.st-smile .eyes-open{opacity:0}
+.st-smile .eyes-happy{opacity:1}
+.st-smile .m-smile{opacity:1}
+.st-smile .m-neutral{opacity:0}
+.st-note .eyes-open,.st-note .m-smile,.st-note .m-neutral{opacity:0}
+.st-note .eyes-closed{opacity:1}
+.st-note .m-neutral{opacity:1}
+.st-note .armR{animation:write .9s infinite var(--ease)}
+@keyframes write{0%,100%{transform:translate(0,0)}50%{transform:translate(-3px,2px)}}
+.st-note .pen{opacity:1}
+.st-frown .brows rect{transform:translateY(3px) rotate(14deg)}
+.st-frown .brows rect:last-child{transform:translateY(3px) rotate(-14deg)}
+.st-frown .m-neutral{opacity:0}
+.st-frown .m-down{opacity:1}
+.st-frown .eyes-open{transform:scaleY(.55);animation:none}
+.st-confuse .head{transform:rotate(9deg)}
+.st-confuse .brows rect:first-child{transform:translateY(-3px)}
+.st-confuse .m-smile{opacity:1}
+.st-confuse .m-neutral{opacity:0}
+.st-confuse .eyes-open .pupil{transform:translateX(-2.5px)}
+.st-bored .eyes-open{transform:scaleY(.4);animation:none}
+.st-bored .head{transform:rotate(-4deg) translateX(2px)}
+.st-bored .m-neutral{opacity:1}
+.st-bored .armL{transform:rotate(-38deg)}
+.st-sleep .eyes-open,.st-sleep .m-smile,.st-sleep .m-neutral{opacity:0}
+.st-sleep .eyes-closed{opacity:1}
+.st-sleep .m-neutral{opacity:1}
+.st-sleep .head{animation:drowse 2.4s infinite var(--ease)}
+@keyframes drowse{0%,100%{transform:rotate(0)}50%{transform:rotate(10deg) translateY(3px)}}
+.st-yawn .eyes-open,.st-yawn .m-smile,.st-yawn .m-neutral{opacity:0}
+.st-yawn .eyes-closed{opacity:1}
+.st-yawn .m-yawn{opacity:1;animation:talk .8s infinite alternate var(--ease);transform-box:fill-box;transform-origin:center}
+.st-yawn .head{transform:rotate(-5deg)}
+.st-lookaway .eyes-open .pupil{transform:translateX(3.5px)}
+.st-lookaway .head{transform:rotate(-6deg)}
+.st-lookaway .m-neutral{opacity:1}
+.st-phone .eyes-open,.st-phone .m-smile,.st-phone .m-neutral{opacity:0}
+.st-phone .eyes-closed{opacity:1}
+.st-phone .m-neutral{opacity:1}
+.st-phone .head{transform:rotate(14deg) translateY(4px)}
+.st-phone .armL{transform:rotate(-58deg)}
+.st-phone .phoneG{opacity:1}
+.st-cough .armR{transform:rotate(-92deg)}
+.st-cough .head{transform:rotate(7deg)}
+.st-cough .m-talk{opacity:1;transform:scaleY(.7)}
+.st-cough .m-neutral{opacity:0}
+.st-cough .brows rect{transform:translateY(2px)}
+.st-watch .armR{transform:rotate(-46deg)}
+.st-watch .head{transform:rotate(5deg) translateY(2px)}
+.st-watch .m-down{opacity:1}
+.st-watch .m-neutral{opacity:0}
+@media (prefers-reduced-motion:reduce){
+  .eyes-open{animation:none}
+  .st-note .armR,.st-talk .m-talk,.st-nod .head,.st-sleep .head,.st-yawn .m-yawn{animation:none}
+}
+/* ============ room screen ============ */
+#screen-room{position:relative}
+.progress{flex:none;height:3px;background:var(--border);position:relative}
+.progress .bar{position:absolute;inset:0;right:100%;background:var(--accent);transition:right .3s var(--ease)}
+.chat{
+  flex:1;min-height:0;overflow-y:auto;padding:14px 14px 10px;
+  overscroll-behavior:contain;scroll-behavior:smooth;
+}
+.sysmsg{text-align:center;font-size:12px;color:var(--muted);letter-spacing:.02em;padding:8px 0}
+.sysmsg.time{font-size:11px;opacity:.85}
+.msg{display:flex;gap:10px;margin:10px 0;align-items:flex-start}
+.msg.me{flex-direction:row-reverse}
+.avatar{flex:none;width:40px;height:40px;border-radius:var(--radius-avatar);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;overflow:hidden}
+.avatar svg{width:20px;height:20px}
+.who{font-size:12px;color:var(--muted);letter-spacing:.02em;margin:0 10px 4px}
+.msg .col{max-width:calc(100% - 50px);min-width:0}
+.msg.me .col{display:flex;flex-direction:column;align-items:flex-end}
+.bubble{
+  padding:10px 13px;border-radius:var(--radius-bubble);
+  font-size:16px;line-height:1.55;word-break:break-word;
+  background:var(--bubble-other);
+  border-top-left-radius:4px;
+}
+.msg.me .bubble{background:var(--bubble-self);border-radius:var(--radius-bubble);border-top-right-radius:4px}
+.msg.examiner .bubble{background:#e7f0fb;border-top-left-radius:4px}
+.bubble .tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;border-radius:4px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+.bubble .tag.warn{background:var(--warn-bg);color:var(--warn)}
+.bubble .tag.hit{background:var(--danger-bg);color:var(--danger)}
+.typing{display:flex;gap:5px;padding:14px 14px;align-items:center}
+.typing i{width:7px;height:7px;border-radius:50%;background:#b6b6b6;animation:tp 1.1s infinite var(--ease)}
+.typing i:nth-child(2){animation-delay:.18s}
+.typing i:nth-child(3){animation-delay:.36s}
+@keyframes tp{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.turnbanner{
+  margin:12px 0;padding:12px 14px;border-radius:var(--radius-card);
+  background:var(--accent-soft);border:1px solid var(--accent-strong);
+  display:flex;align-items:center;gap:12px;
+}
+.turnbanner .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite var(--ease)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.turnbanner .t1{font-size:15px;font-weight:600;color:var(--accent-strong)}
+.turnbanner .t2{font-size:12px;color:var(--muted);letter-spacing:.01em}
+/* input bar */
+.inputbar{
+  flex:none;background:var(--surface-2);border-top:1px solid var(--border);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+}
+.waitbar{display:flex;align-items:center;gap:10px;padding:10px 6px;font-size:13px;color:var(--muted)}
+.waitbar .dot{width:8px;height:8px;border-radius:50%;background:#b6b6b6}
+.waitbar .btn{margin-left:auto;min-height:38px;padding:0 14px;font-size:13px;border-radius:8px}
+.comp{display:flex;align-items:flex-end;gap:8px}
+.modebtn{flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--fg)}
+.modebtn svg{width:24px;height:24px}
+.timerpill{flex:none;display:none;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:0 10px;height:32px;border-radius:999px;background:var(--surface);border:1px solid var(--border)}
+.timerpill.on{display:inline-flex}
+.timerpill.mid{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.timerpill.over{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.holdbtn{
+  flex:1;min-height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);
+  font-size:15px;font-weight:600;letter-spacing:.02em;color:var(--fg);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  user-select:none;-webkit-user-select:none;touch-action:none;transition:background .15s var(--ease),border-color .15s var(--ease);
+}
+.holdbtn svg{width:20px;height:20px}
+.holdbtn.rec{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.txtwrap{flex:1;display:none;gap:8px}
+.txtwrap.on{display:flex}
+.txtwrap input{
+  flex:1;min-height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);
+  padding:0 14px;font-size:15px;outline:none;
+}
+.txtwrap input:focus{border-color:var(--accent-strong)}
+.sendbtn{flex:none;min-height:44px;min-width:64px;padding:0 16px;border-radius:10px;background:var(--accent-strong);color:#fff;font-size:15px;font-weight:600}
+.sendbtn:disabled{opacity:.4}
+.hintbar{display:none;align-items:center;gap:8px;margin-top:8px;font-size:12px;letter-spacing:.02em;padding:8px 12px;border-radius:8px}
+.hintbar.on{display:flex}
+.hintbar.warn{background:var(--warn-bg);color:var(--warn)}
+.hintbar.err{background:var(--danger-bg);color:var(--danger)}
+/* recording overlay */
+.rec-overlay{
+  position:absolute;inset:0;z-index:40;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(2px);
+}
+.rec-overlay.on{display:flex}
+.rec-ring{width:120px;height:120px;border-radius:50%;background:var(--danger);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(250,81,81,.5);animation:ring 1.4s infinite var(--ease)}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(250,81,81,.45)}70%{box-shadow:0 0 0 22px rgba(250,81,81,0)}100%{box-shadow:0 0 0 0 rgba(250,81,81,0)}}
+.rec-ring svg{width:48px;height:48px;color:#fff}
+.rec-time{font-size:34px;font-weight:600;color:#fff}
+.rec-hint{font-size:14px;color:rgba(255,255,255,.92);letter-spacing:.02em}
+.rec-interim{max-width:80%;min-height:48px;text-align:center;font-size:14px;color:rgba(255,255,255,.85);line-height:1.5}
+.recmotion{display:none}
+/* sheet */
+.sheet-mask{position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.35);display:none}
+.sheet-mask.on{display:block}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:31;
+  max-height:82%;background:var(--surface);border-radius:16px 16px 0 0;
+  transform:translateY(100%);transition:transform .25s var(--ease);
+  display:flex;flex-direction:column;
+}
+.sheet.on{transform:translateY(0)}
+.sheet-head{flex:none;display:flex;align-items:center;padding:14px 16px 8px;border-bottom:1px solid var(--border)}
+.sheet-head h3{font-size:16px;font-weight:600;flex:1}
+.sheet-body{overflow-y:auto;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
+.refcard{margin-bottom:14px}
+.refcard h4{font-size:13px;font-weight:600;color:var(--accent-strong);letter-spacing:.02em;margin-bottom:6px}
+.refcard p,.refcard li{font-size:13px;line-height:1.65;color:var(--fg)}
+.refcard ul{padding-left:18px}
+.draft2col{display:flex;gap:10px;margin-top:12px}
+.draft-col{flex:1;min-width:0}
+.draft-col h5{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em;margin-bottom:6px}
+.draft-list{list-style:none;border:1px solid var(--border);border-radius:10px;padding:8px 10px;min-height:120px;max-height:200px;overflow-y:auto;background:var(--surface-2)}
+.draft-list li{font-size:12px;line-height:1.5;padding:4px 0;border-bottom:1px dashed var(--border)}
+.draft-list li:last-child{border-bottom:0}
+.draft-list .k{color:var(--accent-strong);font-weight:600;margin-right:4px}
+.draft-col textarea{width:100%;min-height:120px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.55;background:var(--surface-2);resize:vertical;outline:none}
+.draft-col textarea:focus{border-color:var(--accent-strong)}
+/* ============ report screen ============ */
+#screen-report{overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.score-hero{background:var(--surface);border-radius:var(--radius-card);padding:20px 16px;margin-bottom:14px;text-align:center}
+.score-hero .cap{font-size:13px;color:var(--muted);letter-spacing:.02em}
+.score-hero .big{font-size:56px;font-weight:600;line-height:1.1;letter-spacing:-.02em;margin:4px 0 2px}
+.score-hero .big .full{font-size:18px;color:var(--muted);font-weight:400}
+.score-hero .grade{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;letter-spacing:.04em;padding:3px 12px;border-radius:999px}
+.grade.a{background:var(--accent-soft);color:var(--accent-strong)}
+.grade.b{background:var(--warn-bg);color:var(--warn)}
+.grade.c{background:var(--danger-bg);color:var(--danger)}
+.score-hero .onesay{margin-top:10px;font-size:14px;line-height:1.6;text-align:left}
+.bars{background:var(--surface);border-radius:var(--radius-card);padding:16px;margin-bottom:14px}
+.bar-row{margin-bottom:12px}
+.bar-row:last-child{margin-bottom:0}
+.bar-row .bl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.bar-row .bl .v{font-weight:600}
+.track{height:8px;border-radius:4px;background:var(--bg);overflow:hidden}
+.fill{height:100%;border-radius:4px;background:var(--accent-strong);transform-origin:left;transform:scaleX(0);transition:transform .6s var(--ease)}
+.fill.low{background:var(--warn)}
+.fill.bad{background:var(--danger)}
+.examiners{margin-bottom:14px}
+.excard{background:var(--surface);border-radius:var(--radius-card);padding:14px;margin-bottom:10px;display:flex;gap:12px}
+.excard .avatar{width:42px;height:42px}
+.excard .col{flex:1;min-width:0}
+.excard .nm{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.excard .nm .sc{margin-left:auto;font-size:16px}
+.excard .say{margin-top:4px;font-size:13px;line-height:1.65;color:var(--muted)}
+.detail{background:var(--surface);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:14px}
+.detail h3{font-size:15px;font-weight:600;margin-bottom:8px}
+.drow{padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.6}
+.drow:last-child{border-bottom:0}
+.drow .k{font-weight:600;margin-right:6px}
+.drow.hit .k{color:var(--danger)}
+.drow.ok .k{color:var(--accent-strong)}
+.drow .quote{display:block;margin-top:2px;color:var(--muted)}
+.transcript{background:var(--surface);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:14px}
+.transcript h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.transcript .meta{font-size:12px;color:var(--muted);letter-spacing:.01em;margin-bottom:8px}
+.transcript blockquote{font-size:14px;line-height:1.7;background:var(--surface-2);border-radius:10px;padding:10px 12px;word-break:break-word}
+.report-actions{display:flex;gap:10px;margin-top:4px}
+.report-actions .btn{flex:1}
+/* toast */
+.toast{
+  position:absolute;left:50%;bottom:110px;transform:translateX(-50%) translateY(8px);
+  z-index:60;background:rgba(17,17,17,.88);color:#fff;font-size:13px;letter-spacing:.02em;
+  padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;
+  transition:opacity .2s var(--ease),transform .2s var(--ease);max-width:85%;text-align:center;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* confirm dialog */
+.dialog{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
+.dialog.on{display:flex}
+.dialog .box{width:78%;max-width:320px;background:var(--surface);border-radius:14px;overflow:hidden;text-align:center}
+.dialog .box .txt{padding:22px 20px;font-size:15px;line-height:1.6}
+.dialog .box .ops{display:flex;border-top:1px solid var(--border)}
+.dialog .box .ops button{flex:1;min-height:46px;font-size:15px}
+.dialog .box .ops button:first-child{border-right:1px solid var(--border);color:var(--muted)}
+.dialog .box .ops button:last-child{color:var(--danger);font-weight:600}
+/* ============ motion / a11y ============ */
+.msg,.sysmsg,.turnbanner{animation:msgin .2s var(--ease)}
+@keyframes msgin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .chat{scroll-behavior:auto}
+  .fill{transform:scaleX(1)}
+}
+@media (min-width:520px){
+  .rec-overlay{border-radius:0 0 16px 16px}
+  .sheet{max-width:480px;left:50%;transform:translate(calc(-50% + 0px),100%)}
+  .sheet.on{transform:translate(-50%,0)}
+  .toast{max-width:400px}
+}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-3.5 16L11 13z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 13l9-9" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M20 18v3H6.5A2.5 2.5 0 0 1 4 18.5M8 7.5h8M8 11h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-ff" viewBox="0 0 24 24"><path d="M4 5.5 12 12l-8 6.5zM12.5 5.5 20.5 12l-8 6.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 19 6v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 12.5 11 14l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-badge" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 21c.8-3 2.6-4.5 5-4.5S16.2 18 17 21M12 5.5 13 7l1.5.2-1 1.2.3 1.6L12 9.3l-1.8.7.3-1.6-1-1.2L11 7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 17c.8-2.6 2.6-3.6 4.5-3.6s3.7 1 4.5 3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="app" id="app">
+  <!-- ======== 屏 A · 开始 ======== -->
+  <section class="screen active" id="screen-start" aria-label="开始页">
+    <header class="topbar">
+      <span class="iconbtn" aria-hidden="true"></span>
+      <h1>留任面试 · 模拟考场</h1>
+      <span class="iconbtn" aria-hidden="true"></span>
+    </header>
+    <div class="hero">
+      <h2>轮到你了，第 <span class="num" id="hero-seat">7</span> 位。</h2>
+      <p>仿真实考场：9 人轮流陈述，考官独立打分，练完出评分报告。</p>
+    </div>
+    <div class="card" style="padding:8px" id="preview-mini">
+      <div class="stage" id="preview-strip-mini"></div>
+    </div>
+    <button class="btn block" id="btn-enter" style="min-height:56px;font-size:18px;margin-top:4px">开始模拟面试</button>
+    <button class="btn ghost block" id="btn-settings" style="margin-top:10px">设置与练习记录</button>
+    <div class="card history" id="history-card" style="margin-top:14px">
+      <h3>练习记录 <span style="font-size:11px;font-weight:400;color:var(--muted)">· 只保存在本机</span></h3>
+      <div id="history-list"></div>
+    </div>
+    <p class="foot-note">评分依据《学生会留任面试准备指南》：错位切入、真事证据、30–60 秒、雷区清单。<br>页面本地运行，语音识别需浏览器联网，其余功能离线可用。</p>
+  </section>
+
+  <!-- ======== 设置面板 ======== -->
+  <div class="sheet-mask" id="set-mask"></div>
+  <div class="sheet" id="set-sheet" role="dialog" aria-modal="true" aria-label="设置">
+    <div class="sheet-head">
+      <h3>设置</h3>
+      <button class="iconbtn" id="btn-set-close" aria-label="关闭设置"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <div class="card" style="background:var(--surface-2)">
+        <h3>考官画面预览</h3>
+        <div class="stage" id="preview-strip"></div>
+        <div class="chips" id="pose-chips" style="margin-top:10px"></div>
+        <p class="ai-sec" style="margin-top:8px">考场里他们会实时被你带动：踩雷当场皱眉、讲真事点头、说太久看表打哈欠、答太空歪头疑惑。</p>
+      </div>
+      <div class="card">
+        <h3>考场规则</h3>
+        <ul class="rule-list">
+          <li><span class="no num">1</span><span>9 人同场，抽签定序，按顺序轮流陈述，没有自由讨论和总结陈词。</span></li>
+          <li><span class="no num">2</span><span>每人一个固定时段，到点就停——超时是实打实的减分项。</span></li>
+          <li><span class="no num">3</span><span>考官不在选“谁主导了讨论”，是分别给 9 个人打分、互相比较。</span></li>
+          <li><span class="no num">4</span><span>陈述之后，考官可能追问，答法同样计入印象。</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label id="topic-label">陈述题（模拟选手和你答同一道题）</label>
+          <div role="group" aria-labelledby="topic-label" id="topic-group"></div>
+        </div>
+        <div class="field">
+          <label for="seat-val">我的发言位次（1–9）</label>
+          <div class="seat-row">
+            <div class="stepper">
+              <button type="button" id="seat-dec" aria-label="位次减一">−</button>
+              <span class="val num" id="seat-val" aria-live="polite">7</span>
+              <button type="button" id="seat-inc" aria-label="位次加一">＋</button>
+            </div>
+            <span style="font-size:12px;color:var(--muted)">默认第 7 位，即指南的基准打法</span>
+          </div>
+        </div>
+        <div class="field">
+          <label id="dept-label">我的部门（用于生成发言与点评）</label>
+          <div class="chips" role="group" aria-labelledby="dept-label" id="dept-group"></div>
+        </div>
+        <div class="field switchrow">
+          <span><span class="lab">语音播报</span><br><span class="sub">模拟选手与考官“开口说话”，关闭则静音快进</span></span>
+          <button type="button" class="toggle" id="tts-toggle" role="switch" aria-checked="true" aria-label="语音播报开关"></button>
+        </div>
+        <div class="field switchrow">
+          <span><span class="lab">按住说话（语音输入）</span><br><span class="sub" id="sr-status">检测浏览器支持中…</span></span>
+          <button type="button" class="toggle" id="sr-toggle" role="switch" aria-checked="true" aria-label="语音输入开关"></button>
+        </div>
+        <div class="notice info" id="sr-notice" style="display:none">
+          <svg aria-hidden="true"><use href="#i-alert"/></svg>
+          <span id="sr-notice-text"></span>
+        </div>
+      </div>
+      <div class="card" id="ai-card">
+        <h3 style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none" id="ai-head" role="button" tabindex="0" aria-expanded="false">AI 增强（可选 · 用你自己的模型接口）<svg class="chev" id="ai-chev" aria-hidden="true"><use href="#i-back"/></svg></h3>
+        <div id="ai-body" style="display:none">
+          <p class="ai-sec">填一个 OpenAI 兼容接口（DeepSeek / 通义 / Kimi / 智谱 / 本地 Ollama 等）。密钥只保存在你本机浏览器：默认关掉标签页即清除，勾选「记住」才会写入本机 localStorage；请求由页面直连你填的地址，不经任何第三方，也不会进本页面的任何日志。地址请用 https 开头。若服务商不允许网页跨域调用（CORS），拉取和请求会失败，换服务商或用本地 Ollama 即可。</p>
+          <div class="field">
+            <label for="ai-base">接口地址 Base URL</label>
+            <input class="in" id="ai-base" type="url" placeholder="https://api.deepseek.com/v1" style="width:100%" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="ai-key">API Key</label>
+            <div style="display:flex;gap:8px">
+              <input class="in" id="ai-key" type="password" autocomplete="off" placeholder="sk-…（仅存本机）">
+              <button class="btn ghost" id="ai-clear" style="min-height:44px;padding:0 14px;font-size:13px">清除</button>
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)"><input type="checkbox" id="ai-remember"> 记住密钥（写入本机 localStorage）</label>
+          </div>
+          <div class="field">
+            <label for="ai-model">模型</label>
+            <div style="display:flex;gap:8px">
+              <input class="in" id="ai-model" type="text" placeholder="如 deepseek-chat，或点「拉取」获取列表">
+              <button class="btn ghost" id="ai-fetch" style="min-height:44px;padding:0 14px;font-size:13px">拉取</button>
+            </div>
+            <select id="ai-model-list" class="in" style="display:none;width:100%;margin-top:8px" aria-label="从接口拉取的模型列表"></select>
+          </div>
+          <div class="field switchrow">
+            <span><span class="lab">AI 生成选手发言</span><br><span class="sub">每轮现场生成、不重样；失败自动用本地发言兜底</span></span>
+            <button type="button" class="toggle" id="ai-spk" role="switch" aria-checked="false" aria-label="AI 生成选手发言开关"></button>
+          </div>
+          <div class="field switchrow">
+            <span><span class="lab">AI 打分与点评</span><br><span class="sub">按同一份标准语义评分；失败自动用本地规则兜底</span></span>
+            <button type="button" class="toggle" id="ai-sco" role="switch" aria-checked="false" aria-label="AI 打分开关"></button>
+          </div>
+          <div class="notice warn" id="ai-status" style="display:none">
+            <svg aria-hidden="true"><use href="#i-alert"/></svg>
+            <span id="ai-status-text"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== 屏 B · 考场 ======== -->
+  <section class="screen" id="screen-room" aria-label="考场">
+    <header class="topbar">
+      <button class="iconbtn" id="btn-back" aria-label="返回设置"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
+      <h1>留任面试模拟考场<small id="room-sub">9 位候选人 · 考官 3 人</small></h1>
+      <button class="iconbtn" id="btn-cam" aria-label="考官画面开关" aria-pressed="true"><svg aria-hidden="true"><use href="#i-cam"/></svg></button>
+      <button class="iconbtn" id="btn-ref" aria-label="备考卡与草稿纸"><svg aria-hidden="true"><use href="#i-book"/></svg></button>
+    </header>
+    <div class="progress" aria-hidden="true"><div class="bar" id="room-progress"></div></div>
+    <div class="stage-wrap" id="stage-wrap"><div class="stage" id="stage"></div></div>
+    <div class="chat" id="chat" role="log" aria-live="polite" aria-label="考场发言记录"></div>
+    <div class="inputbar" id="inputbar">
+      <div class="waitbar" id="waitbar">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="wait-text">等待中…</span>
+        <button class="btn ghost" id="btn-ff">快进</button>
+      </div>
+      <div class="comp" id="comp" style="display:none">
+        <button class="modebtn" id="btn-mode" aria-label="切换键盘输入"><svg aria-hidden="true"><use href="#i-keyboard"/></svg></button>
+        <span class="timerpill num" id="timer"><svg width="14" height="14" aria-hidden="true"><use href="#i-clock"/></svg><span id="timer-val">0.0</span>s</span>
+        <button class="holdbtn" id="btn-hold"><svg aria-hidden="true"><use href="#i-mic"/></svg>按住说话</button>
+        <div class="txtwrap" id="txtwrap">
+          <input id="txt-input" type="text" maxlength="600" placeholder="输入你的发言…" aria-label="输入你的发言" autocomplete="off">
+          <button class="sendbtn" id="btn-send" disabled>发送</button>
+        </div>
+      </div>
+      <div class="hintbar" id="hintbar" role="status"></div>
+    </div>
+    <!-- 录音浮层 -->
+    <div class="rec-overlay" id="rec-overlay">
+      <div class="rec-ring" aria-hidden="true"><svg><use href="#i-mic"/></svg></div>
+      <div class="rec-time num" id="rec-time">0.0s</div>
+      <div class="rec-interim" id="rec-interim">准备就绪，请开始陈述…</div>
+      <div class="rec-hint" id="rec-hint">松开手指，结束并发出这段发言</div>
+      <button class="btn ghost" id="btn-rec-cancel" style="min-height:40px">取消本次</button>
+    </div>
+    <!-- 备考卡 sheet -->
+    <div class="sheet-mask" id="sheet-mask"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="备考卡与草稿纸">
+      <div class="sheet-head">
+        <h3>备考卡 · 草稿纸</h3>
+        <button class="iconbtn" id="btn-sheet-close" aria-label="关闭备考卡"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="sheet-body">
+        <div class="refcard">
+          <h4>三层结构（第 7 位打法）</h4>
+          <ul>
+            <li><b>定位：</b>半句指一下前人的方向，然后“我想换一个角度——”。</li>
+            <li><b>主论点：</b>说清你的角度，紧跟一个本部门真事。全场最重要的 30 秒。</li>
+            <li><b>落地：</b>“所以如果让我来做，第一步是××。”证明你不只出主意。</li>
+          </ul>
+        </div>
+        <div class="refcard">
+          <h4>四种合法的差异化路径</h4>
+          <ul>
+            <li><b>换维度</b>：别人谈怎么办，你谈为什么 / 怎么判断。</li>
+            <li><b>换视角</b>：换成干事视角或被服务同学的视角。</li>
+            <li><b>换证据</b>（最稳）：别人讲道理，你讲自己部的一个真事。</li>
+            <li><b>换颗粒度</b>：别人讲方向，你讲第一步谁来做。</li>
+          </ul>
+        </div>
+        <div class="refcard">
+          <h4>一句都不要说</h4>
+          <p>“纽带／锻炼自我”这类套话；“我没经验但可以学”；“都可以，听安排”；“影响学习／综测加分”；评价上一届部长本人；否定前面同学（“×号说得片面”）；“我打断一下”。</p>
+        </div>
+        <div class="refcard">
+          <h4>计时纪律</h4>
+          <p>目标 30–60 秒，到点就停。超时就是偷第 8、9 位的时间，这一场里是实打实的减分项。</p>
+        </div>
+        <div class="refcard">
+          <h4>素材库 · 真事清单（换证据用）</h4>
+          <ul>
+            <li><b>统筹：</b>海淀校区 2026 年春季无偿献血活动——方案筹备、现场人员调度、复盘收尾全流程。</li>
+            <li><b>带队：</b>北京马拉松、中超联赛、小黄人趣跑志愿带队，保障服务规范有序（获北马优秀志愿者）。</li>
+            <li><b>内容：</b>十余篇志愿招募推文，项目覆盖博物馆讲解、健步走、普法宣讲、半马、校史问答。</li>
+            <li><b>设计：</b>世界读书日系列活动物料——展板、海报、明信片、桌布。</li>
+            <li><b>机制：</b>和搭档同学搭建设计宣传小组，轮值审稿，已完成 6 篇稿件审核。</li>
+            <li><b>对外：</b>代表部门出席海淀区高校防艾社团工作会；参加海淀区志愿服务能力提升培训班。</li>
+          </ul>
+          <p>用法：主论点 = 上面任何一件事 + 一句「所以我判断……／我学到的是……」。开口前先挑好一件。本科的十余场就业升学讲座也可以作背景补充。</p>
+          <p>注意：简历里「服从调度、随时到岗」是书面话，口头别说——那是「听安排」雷区。口头要换成「我看到了什么问题、我想怎么改」。</p>
+        </div>
+        <div class="draft2col">
+          <div class="draft-col">
+            <h5>左栏 · 前面选手的角度（已自动记录）</h5>
+            <ul class="draft-list" id="draft-left"></ul>
+          </div>
+          <div class="draft-col">
+            <h5>右栏 · 我的角度</h5>
+            <textarea id="draft-right" placeholder="空着。轮到你之前，把想说的一句话角度写在这里…" aria-label="我的角度草稿"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 屏 C · 报告 ======== -->
+  <section class="screen" id="screen-report" aria-label="面试结果">
+    <header class="topbar">
+      <span class="iconbtn" aria-hidden="true"></span>
+      <h1>面试结果</h1>
+      <span class="iconbtn" aria-hidden="true"></span>
+    </header>
+    <div id="report-body"></div>
+  </section>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="dialog" id="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-text">
+    <div class="box">
+      <div class="txt" id="dialog-text">确定要退出考场吗？本次练习将不会保存。</div>
+      <div class="ops">
+        <button id="dialog-no">继续面试</button>
+        <button id="dialog-yes">退出</button>
+      </div>
+    </div>
+  </div>
+<script>
+/* ================= 数据层 ================= */
+const NAMES = {1:'陈一诺',2:'周子墨',3:'林晓萱',4:'吴启航',5:'郑安凝',6:'高子健',8:'许安若',9:'韩沐宸'};
+const DEPTS = ['志愿实践部','学习宣传部','企划部','宣传部','办公室','文体部','外联部','学术部'];
+const EXAMINERS = [
+  {id:'e1', name:'主考官 · 前届部长',  role:'structure'},
+  {id:'e2', name:'副考官 · 指导老师',  role:'conduct'},
+  {id:'e3', name:'副考官 · 主席团成员', role:'angle'}
+];
+
+const TOPICS = [
+  {
+    id:'flow',
+    title:'这届部门活动里，你最想改进的一个流程',
+    desc:'贴近日常运作，前人角度集中，最适合练“换证据”',
+    ask:'请听题：这届部门活动里，你最想改进的一个流程是什么？按抽签顺序，每人依次陈述。每人一个固定时段，到点请停。',
+    speeches:[
+      {seat:1, angle:'活动形式', kw:['形式','破冰','游戏','互动','环节'], texts:[
+        '我先说吧。我觉得咱们迎新晚会的破冰环节有点尬，上台玩游戏的永远是那几个社牛，其他人都在低头玩手机。我想改进的是活动形式，多做点不用上台、小组就能玩的游戏。',
+        '我说个最直观的：晚会互动全是举手抽奖，台下没中奖的人后半场都在玩手机。想改的是互动设计，做点全场都能参与的东西，比如桌面的小组任务，输赢一起担。']},
+      {seat:2, angle:'宣传预热', kw:['宣传','推送','海报','预热','阅读'], texts:[
+        '我想说宣传。每次活动海报做得挺好看，但推送发得太晚，基本是前一天才推，阅读量一直上不去。应该提前一周做倒计时预热。',
+        '我想说宣传节奏。现在是活动前一两天才发推送，海报贴出来大家日程早排满了。提前一周预热，倒计时和报名通道一起放，情况肯定不一样。',
+        '我想说宣传的时效。学风建设周的推文拖到活动结束才发，热度全没了。内容部门的发布要跟着活动节奏走：预热点一条、进行时一条、回顾一条，三条连起来才有声量。']},
+      {seat:3, angle:'通知机制', kw:['通知','沟通','群里','传达','定人'], texts:[
+        '我讲沟通。上次摆点当天早上才在群里通知几点到，好几个人没看到，差点没人搬物资。想改进的是通知机制，提前三天定人定岗，重要消息私聊确认。',
+        '我讲通知。上次搬物资，当天上午才在群里喊人，到了才发现有两个干事根本不知道有这活。该提前三天定人定岗，群公告加私聊确认，双保险。',
+        '我讲志愿排班。上次敬老院服务，当天才在群里问谁能去，最后去了四个还全是熟面孔。志愿活动应该提前三天在排班表上认领，认不满再私聊动员，别总让同一批人顶上。']},
+      {seat:4, angle:'分工表', kw:['分工','责任','岗位','谁干','职责','改了四版'], texts:[
+        '前面几位说的我都同意，我补一个。真正卡住我们的往往不是想法，是没人知道这活该谁干。上学期迎新，分工前后改了四版，还是有环节漏人。我的角度是分工表：责任人写清楚，再配一个备份人。',
+        '前面几位的角度我都认同。我从执行面补一个：我们不是没分工，是分工改得太勤。上次迎新分工表前后改了四版，最后一版还有人不知道。我的角度是：责任人写死，每次改动必须群里同步。']},
+      {seat:5, angle:'复盘沉淀', kw:['复盘','沉淀','文档','照片','物料'], texts:[
+        '我关注活动结束之后。每次办完大家就散了，照片、物料、踩过的坑都没人整理，下学期又从零开始。我想建一个复盘文档，办完三天内写完。',
+        '我关注收尾。每场活动办完，物料随手一放，照片散在各个群里，下学期要用全靠翻记录。我想立一条规矩：结束三天内，负责人把复盘和资料归进同一个文档。']},
+      {seat:6, angle:'干事积极性', kw:['积极性','热情','参与','动力','核心岗位'], texts:[
+        '我想说干事积极性。招新时来了二十多人，学期末就剩七八个。不是他们懒，是半年下来没接到过有分量的活。我想给每个活动给新人留一两个核心岗位。',
+        '我讲积极性。招新三十多人，期末剩不到十个。不是人不行，是半年都在搬桌椅贴海报，没接过一件完整的事。我想让每个活动给新人留一两个能从头跟到尾的核心岗位。']},
+      {seat:8, angle:'审批流程', kw:['审批','经费','场地','报销','申请'], texts:[
+        '我讲个流程问题。场地和经费审批太慢，上次想借多媒体厅，批下来的时候都该彩排了。应该提前一学期把活动档期和场地一起报。',
+        '我说流程卡点。场地和经费审批动不动一周，上次借教室，批下来那天活动都该彩排了。建议开学就把全学期的活动档期和场地需求一次性报上去。',
+        '我讲志愿立项。想新增一个社区服务点，审批来回走了两周，直接错过招募窗口。常规项目应该年初统一立项，临时项目走快速通道，别让好想法死在流程里。']},
+      {seat:9, angle:'排期避考', kw:['排期','时间','考试','档期','校历'], texts:[
+        '我想说时间安排。上学期团日活动和期中考试就隔了两天，出勤和效果都不好。排期应该对着校历排，避开考试周。',
+        '我讲排期。上学期团日活动定在期中考前两天，出勤和效果都砸了。排期的时候对一遍校历，考试周前后各留出缓冲。']}
+    ]
+  },
+  {
+    id:'why',
+    title:'为什么想留任',
+    desc:'答案最容易同质化，适合练“换维度”“换证据”',
+    ask:'请听题：你为什么想留任？按抽签顺序，每人依次陈述。注意：考官分别给每个人打分，观点重复不丢人，被记住才重要。每人一个固定时段。',
+    speeches:[
+      {seat:1, angle:'做完再走', kw:['交接','做完','经手','成型'], texts:[
+        '我在{dept}这一年，好几件事是我从跟到尾做完的，流程和交接还没成型。我不想走到一半就走，想把它做完再走。',
+        '{dept}这一年，值班表、物资台账这些事是我从头跟到尾的，交接才交了一半。我不想烂尾，想把它做完、做好看再走。',
+        '研究生会的志愿项目，好几套流程是我和搭档从零跑通的，比如献血活动的志愿者调度表。机制刚成型，交接还没做完，我想留下来把它跑顺再走。']},
+      {seat:2, angle:'经验传承', kw:['经验','学会','教给','传承','带新人'], texts:[
+        '这一年我学会了写推文、办活动，也踩了不少坑。我想留下来，把这些经验直接教给下一届，让他们少踩一点。',
+        '这一年我踩过的坑，从推文被驳回到物料漏订，都是一次次试出来的。留任就是想把这些直接教给下一届，让他们第一个学期就能上手。',
+        '这一年我审了六篇宣传稿件、带过北马几百人的志愿者队伍，踩过的坑和攒下的经验都在手上。留任就是想把这些直接教给下一届，别让他们从零摸。']},
+      {seat:3, angle:'部门感情', kw:['感情','朋友','氛围','舍不得'], texts:[
+        '说实话是感情。我们部的人处成了朋友，我不舍得这个氛围，也想再和大家一起办一次像样的大活动。',
+        '说实话一半是感情。我们一起熬过迎新那周的通宵，也一起办砸过一场活动再复盘到半夜。这个部门对我不是一个组织，是一群人。',
+        '一半是感情。献血活动那天从早站到晚，一起收场的伙伴到现在还是老搭档。志愿实践部对我来说，是一群一起干实事的人。']},
+      {seat:4, angle:'未完成的事', kw:['遗憾','没做成','完成','做成'], texts:[
+        '去年迎新有一个环节是我负责的，最后因为场地没协调下来，没做成，一直是个遗憾。我想留任，把它做完整。',
+        '去年有个校友分享会，筹备了一个月，最后场地没批下来，黄了。这事一直搁在我心里。我想留任把它办成，当作给自己的交代。',
+        '防艾主题的活动，我参加了海淀区高校防艾社团工作会后就想在我们部门落地一场，方案才起了个头。留任，把它办成。']},
+      {seat:5, angle:'主动改流程', kw:['流程','改进','值班表','自己来'], texts:[
+        '这一年我发现部门里有些流程可以改，比如我们的值班表，一直按两年前的方式排。我想留任试试自己动手改，而不是等人来改。',
+        '我发现部门有些习惯该更新了，比如会议记录还在手抄传阅。我想留下来，把这些小事一件件改成现在的方式，而不是等人来改。',
+        '我们部门的稿件审核轮值机制，是我和搭档搭起来的，跑了一个学期已经审了六篇。我想留任继续把它打磨成部门的标准流程。']},
+      {seat:6, angle:'角色升级', kw:['被安排','安排别人','角色','独当一面'], texts:[
+        '我这一年一直是「被安排」的角色，接到活就干。留任对我来说，是想试一次「安排别人」——把我这一年知道的，变成下一届能用的东西。',
+        '这一年我一直处在「被安排」的位置，活来了就接。留任是想试一次反过来：安排别人、培养别人，把我学到的变成别人的起点。',
+        '这一年我多数时候在执行，带队、写推文、审稿都干过。留任想往前提一步：牵头一个志愿项目，把「我做过」变成「我带别人做」。']},
+      {seat:8, angle:'守住荣誉', kw:['优秀部门','牌子','荣誉','守住'], texts:[
+        '{dept}上学期评上了优秀部门。这块牌子来得不容易，我想留下来守住它，也把怎么评上的方法整理出来传下去。',
+        '上学期{dept}评上了优秀，我知道这块牌子是一点点挣出来的。我想留下来守住它，也把这套做法整理成册传给下一届。',
+        '我拿了研究生会优秀工作者，北马也评上了优秀志愿者。这些认可是部门给的，我想留下来，把这份口碑接着做下去。']},
+      {seat:9, angle:'三件事规划', kw:['三件事','规划','落地','清单'], texts:[
+        '我已经列好下学年想做的三件事。留任对我来说不是头衔，是有机会把这三件事一件件落地。',
+        '下学年我想做的三件事已经写进备忘录了。留任对我来说不是头衔，是把这三件事一件一件做出来的机会。',
+        '下学年我想做三件事：把宣传小组的轮值审稿写成制度、把部门内部志愿项目做出品牌、带出两个能独立带队的干事。留任就是来兑现的。']}
+    ]
+  },
+  {
+    id:'first',
+    title:'下学期只让你负责一个活动，你选什么、第一步做什么',
+    desc:'天然带“落地”层，适合练“换颗粒度”',
+    ask:'请听题：如果下学期只让你负责一个活动，你选什么？第一步做什么？按抽签顺序依次陈述。注意听清楚：考官要的是第一步，不是口号。',
+    speeches:[
+      {seat:1, angle:'迎新晚会', kw:['晚会','节目','迎新'], texts:[
+        '我选迎新晚会，这是部门的门面。第一步是把节目单定下来——节目是晚会的根，节目单定了，场地、彩排才好排。',
+        '我选迎新晚会，它是部门每年的门面。第一步不是想新节目，是把去年节目单翻出来看留存——哪些节目观众反馈好，先定这个盘子。']},
+      {seat:2, angle:'部门招新', kw:['招新','海报','纳新','宣传'], texts:[
+        '我选部门招新。第一步是重做一套宣传海报，去年的海报太老气了，先把门面换新。',
+        '我选招新，人是一切的前提。第一步是复盘去年哪几个渠道来的人最多，把力气压到有效渠道上，海报换不换再说。']},
+      {seat:3, angle:'志愿基地', kw:['志愿','敬老','基地','服务'], texts:[
+        '我选敬老院的志愿服务。第一步是先联系基地，把固定的服务时间谈下来，时间定了人才好排。',
+        '我选敬老院志愿服务，这是最有延续性的事。第一步是给基地负责人打电话，把每月固定时间谈死，时间定了志愿者才好排班。',
+        '我选社区课业辅导，是我们志愿队的老项目。第一步是先去社区问清这学期孩子最缺哪科辅导——按需求定内容，而不是按我们会什么定。']},
+      {seat:4, angle:'部门内建', kw:['内建','团建','桌游','聚'], texts:[
+        '我选部门内建。第一步是订个桌游吧，让大家先玩起来，感情熟了后面的事都好说。',
+        '我选部门内建。新干事互相还不熟，做事全是单线联系。第一步是办一场饭局加桌游，让每个人至少记住五个人的名字，后面协作成本会低很多。']},
+      {seat:5, angle:'经验分享会', kw:['分享','学长','学姐','讲座'], texts:[
+        '我选经验分享会，请大三大四的学长学姐回来聊实习和保研。第一步是把嘉宾名单定下来，一家家去约时间。',
+        '我选经验分享会，保研考研实习，大二大三最缺这个信息。第一步是列学长学姐名单挨个去约，嘉宾定了，场地宣传都是后话。']},
+      {seat:6, angle:'文化节主题', kw:['文化节','主题','展','摊位'], texts:[
+        '我选校园文化节。第一步是定主题——主题定了，摊位怎么布置、宣传怎么做才有方向。',
+        '我选校园文化节。第一步是定主题。主题一出，摊位怎么布、宣传怎么写全都有解；主题不定，后面全是空转。']},
+      {seat:8, angle:'换届流程', kw:['换届','仪式','彩排','流程'], texts:[
+        '我选换届仪式。第一步是把流程写出来，先走一遍彩排，往年总有人上台不知道站位。',
+        '我选换届仪式，这是传承的仪式感。第一步是把流程写成文档再走一遍彩排，去年就有人上台不知道站哪，话筒都没递到位。']},
+      {seat:9, angle:'外院合作', kw:['联合','外院','合作','赞助'], texts:[
+        '我选和外院的联合活动。第一步是先去谈合作，看对方有没有意向，合作谈不下来后面都是空谈。',
+        '我选跟外院的联合活动，单打独斗规模有限。第一步是带着两个现成方案去找对方负责人谈，有方案对方才好表态。']}
+    ]
+  },
+  {
+    id:'proud',
+    title:'这一年部门里你最有成就感的一件事',
+    desc:'逼你讲真事，最适合练“换证据”',
+    ask:'请听题：这一年部门里，你最有成就感的一件事是什么？为什么？按抽签顺序依次陈述。提醒一句：讲具体的事，少讲感想。',
+    speeches:[
+      {seat:1, angle:'制度落地', kw:['台账','表格','制度','归档'], texts:[
+        '最有成就感的是把物资台账从一团乱麻整理成了电子表格。之前每次活动前都要翻聊天记录找东西在哪，现在打开表格就能查。小事，但真的省时间。']},
+      {seat:2, angle:'把小事做实', kw:['签到','动线','环节','细节'], texts:[
+        '我最有成就感的是迎新晚会那天，我负责的签到环节没出一点错。三百多人进场，队伍一直没断。为这个我提前画了三版动线图。']},
+      {seat:3, angle:'带人', kw:['带人','教','独立','对接'], texts:[
+        '我带的一个干事，从不敢开口对接场地，到能独立跟老师谈借教室。看他那次谈下来，比我自己办成活动还高兴。']},
+      {seat:4, angle:'技能突破', kw:['推文','过审','技能','学会'], texts:[
+        '上学期推文被驳回五次，第六次终于过审，还被老师转发了。那篇我改到凌晨一点。成就感是：我知道好推文长什么样了。']},
+      {seat:5, angle:'救火与预案', kw:['预案','备用','应急','突发'], texts:[
+        '活动当天音箱坏了，我们几个临时从学生会仓库调了一套备用，十分钟搞定，观众完全没察觉。那次之后我信了：预案不是写给自己看的。',
+        '献血活动当天人手突然少了两名，我们现场把岗位重新排布，志愿者按区块补位，全流程没断。那次之后，每场活动的方案里都有一张备用岗位表。']},
+      {seat:6, angle:'提议被采纳', kw:['采纳','提议','值班','排班','方案'], texts:[
+        '最有成就感的是值班制度落地。我提的排班方案被部长采纳，跑了一个月，现在部里再没空过岗。',
+        '最有成就感的是宣传小组的轮值审核机制跑起来了。我和搭档轮流审稿，这学期已经审了六篇，零延误发出。从提议到落地，用了三周。']},
+      {seat:8, angle:'氛围建设', kw:['氛围','联谊','组队','熟悉'], texts:[
+        '部门联谊那天，两个平时不说话的干事因为一个游戏组队拿了第一，后来成了固定搭档。部门氛围就是被这些小事粘起来的。',
+        '最有成就感的是社区服务那天，一位老奶奶记住了我们每个志愿者的名字，临走还塞给我们一袋自己种的橘子。那种被记住的感觉，比任何奖状都实在。']},
+      {seat:9, angle:'代表部门', kw:['答辩','汇报','代表','门面'], texts:[
+        '学期末优秀部门答辩，我负责的三分钟汇报拿了全场最高分。PPT 是我做的，讲稿是我写的，评委问的两个问题我都提前备过。']}
+    ]
+  },
+  {
+    id:'view',
+    title:'有人说学生会的活动是“自嗨”，同学并不买账，你怎么看',
+    desc:'观点辩驳题，最适合练“反面补一句”和“换维度”',
+    ask:'请听题：有人说学生会的活动是「自嗨」，同学并不买账。你怎么看？按抽签顺序依次陈述。这道题没有标准答案，考官听的是你有没有自己的角度。',
+    speeches:[
+      {seat:1, angle:'部分同意', kw:['一半同意','部分','承认','一棍'], texts:[
+        '这话我一半同意。迎新的部分环节确实是为了办而办，比如上台互动永远是那几个人。但招新摊位那天排队提问的同学是真需求，不能一棍子打死。']},
+      {seat:2, angle:'归因宣传', kw:['宣传','不知道','推文','信息'], texts:[
+        '我觉得问题出在宣传。不是同学不买账，是很多人根本不知道有这个活动。上次讲座，推文当天才发，来的都是路过的。信息到了，人就到了。']},
+      {seat:3, angle:'姿态问题', kw:['姿态','任务','观感'], texts:[
+        '我换个视角：很多活动是抱着完成任务的心态在办，同学一眼就能看出来。把「必须办」换成「想办成什么样」，观感会完全不同。']},
+      {seat:4, angle:'需求错位', kw:['需求','问卷','错位'], texts:[
+        '我不太同意「自嗨」这个说法，但承认供需错位。我们总按「我们想办什么」出题，没问过同学想参加什么。开学做一次问卷，比开十次策划会有用。']},
+      {seat:5, angle:'用事实反驳', kw:['数据','报名','坐满','事实'], texts:[
+        '看事实就知道不全是自嗨：运动会志愿服务报名秒满，考研经验分享会连后排都坐满了。自嗨的是少数几场，抢手的一直有人蹲点。该做的是复盘哪些成了、为什么。']},
+      {seat:6, angle:'先定标准', kw:['标准','指标','定义'], texts:[
+        '我认同前面的判断，再补一个角度：什么叫买账？如果指标是到场人数，确实难看；如果是有多少同学记住了这个部门、下次还愿意来，结论不一样。先定标准，再下判断。']},
+      {seat:8, angle:'反馈机制', kw:['反馈','收集','提问'], texts:[
+        '自嗨不可怕，可怕的是自嗨完不复盘。我建议每场活动结束收集二十份同学反馈，两分钟一份。反馈拿到手，买不买账就不用猜了。']},
+      {seat:9, angle:'反驳加限定', kw:['太满','不公平','座无虚席','小众'], texts:[
+        '这话说得太满。校运会几千人观赛，迎新晚会座无虚席，说同学不买账不公平。真正该改的是几场小众活动，别让一两场冷场代表全部。']}
+    ]
+  }
+];
+
+const ASKS = [
+  {qs:['如果部员当着大家的面和你吵起来，你会怎么办？',
+       '如果部员在群里阴阳怪气、当众顶撞你，你怎么处理？'],
+   ref:'不在群里解决；先看是不是自己的问题——话说清了吗、时间合理吗；第二步私下找他，先问他的困难，不讲自己的道理；第三步把分工写成文字。最在意的是别让一个干事因为跟你吵过一次就退出。'},
+  {qs:['学业和工作冲突了，你怎么办？',
+       '期末周撞上大型活动，你怎么办？'],
+   ref:'按紧急程度排计划；实在忙不过来就向学长姐要人；事后回头看是方法问题还是效率问题。别说「我肯定以学习为主」——这是雷区。「校外实习即将收尾、在校时间充裕」是真实优势，可以直说。'},
+  {qs:['上一任部长有什么做得不好的地方？',
+       '你觉得上一届的部门工作，有什么可以改进的地方？'],
+   ref:'更愿意说成「他那一届受条件限制没能做的事」。比如某件事不是他的问题，是当时条件不具备。你想做的是把这个补上，而不是改他的做法。原则：说流程，不说人。'},
+  {qs:['如果这次落选了，你怎么办？',
+       '如果这次没能留任，你会怎么安排接下来的时间？'],
+   ref:'会失落，但会做两件事：找部长问一句「我这次差在哪」；这一年经手的交接册继续做完，不管当不当部长。'},
+  {qs:['你和旁边这位同学都很优秀，但这次只录一人，你推荐谁？',
+       '你和另一位候选人都不错，但名额只有一个，你会怎么向考官说明谁更合适？'],
+   ref:'先肯定对方的具体长处，再分岗位说明谁更适合什么，而不是急着说自己更好。面试官评语教训：「不能摆正自己的位置，自信过头，有一点高人一等的感觉。」'},
+  {qs:['在部门这一年，你最大的成长是什么？',
+       '用一件具体的事，说说这一年你的成长。'],
+   ref:'说一件具体的事和它带来的具体能力，比如「我学会把分工写成文字」。不要说「变得成熟了」这种没有证据的话。'},
+  {qs:['你策划的活动报名远低于预期，现场很冷清，你怎么办？'],
+   ref:'先保住现场：让来的人有收获，口碑比人数重要；当场做小调整，比如合并环节、加互动；结束后复盘是宣传问题还是需求问题，写成文档。不甩锅给「同学不配合」。'},
+  {qs:['部长把一个你完全没做过的活直接丢给你，你怎么接？'],
+   ref:'先接住再拆解：问清目标、截止时间和可用资源；不会的部分明说「这块我没做过，我先试，卡住了来问你」；拆成步骤排优先级。不空手回，也不闷头扛到截止日才说做不了。'}
+];
+
+/* ---- 评分词表 ---- */
+const AVOID = [
+  {re:/纽带|锻炼自我|锻炼自己|锻炼(的)?平台|提升自我/, k:'培训机构套话', why:'考官一天听十几遍，「负责、认真」这类词已经听麻了。', soft:false},
+  {re:/没经验.{0,6}(学|上手)|经验不足.{0,8}(学|成长|锻炼)/, k:'“没经验但我可以学”', why:'等于说「你需要花时间培养我」。改成「我已经做了××」。', soft:false},
+  {re:/我?都可以[，。!！]?($|听)|听.{0,4}安排|随便(吧|啦)/, k:'“都可以，听安排”', why:'被动。这场要听的是「我看到了什么问题、我想怎么改」。', soft:false},
+  {re:/影响学习|综测|加分|绩点|保研/, k:'动机存疑', why:'留任动机存疑，一票否决级。', soft:false},
+  {re:/上一届(的)?部长|前任部长|上任部长/, k:'评价上一届本人', why:'考官就是前任。说流程可以说人不行——请自查语境，是不是在说「人」。', soft:true},
+  {re:/(说得?)?(太)?片面|说得不对|我不同意|不敢苟同|我打断/, k:'否定他人', why:'否定别人是明确减分项。改成「我认同这个点，但想补一个角度」。', soft:false},
+  {re:/总结一下|总的来说|综上所述|我来说个总结|归一归|归纳一下(前面|大家)/, k:'越权总结', why:'这不是总结环节。归一归类，等于把第 8、9 位的素材提前用掉。', soft:false}
+];
+const RE_RELOCATE = /换(一|个|另)?角度|换一个角度|补(一)?个角度|换(一)?个视角|我的角度|从(另|不同)角度|不一样的角度|反着说|反面补/;
+const RE_EVIDENCE = /(上学期|上周|上次|上个月|那(次|天)|去年|前几天|这一学期)/;
+const RE_DEPT = /(我们|咱们)(部|部门|中心)/;
+const RE_NUM = /[0-9一二三四五六七八九十两]{1,3}\s*(个|次|版|人|天|周|场|轮|点)/;
+const RE_DIM = /(为什么|怎么判断|判断标准|值不值得|核心问题|根源|标准是)/;
+const RE_VIEW = /(干事|新生|同学们|被服务|站在|视角|参与的人|普通成员)/;
+const RE_GRAN = /(第一步|第一(个)?动作|先确认|谁来(做|干|负责)|责任人|写清楚)/;
+const RE_LAND = /(如果让我来做|让我来做|我会先|第一步|我(来|先)做)/;
+const RE_CLOSE = /(后面还有.{0,6}(两|2)位|想听听他们|听听(后面|他们)|以上是我)/;
+const RE_ACK = /(前面[几这三四五六]位|前面同学|我认同|我同意|同意前面|听得比较多的)/;
+
+/* ---- 评语模板 ---- */
+const SAYINGS = {
+  length:{good:'时间卡得很准，到点就停——这份自觉考官都看得见。', mid:'时长基本合格，再紧一点更有余裕。', short:'这次发言太短了，30 秒都没站住，主论点来不及展开。', over:'超时了。超时就是偷第 8、9 位的时间，这一场里是实打实的减分项。'},
+  relocate:{good:'半句话承认、立刻错位，开头非常干净。', mid:'有错位的意思，但开头绕了一点。', bad:'没有错位切入。第 7 位的打法是：半句话指一下前人方向，然后「我想换一个角度——」'},
+  evidence:{good:'用自己部的真事当证据，比讲十句道理都管用。', mid:'有一点具体的事，但证据还不够实。', bad:'全场没听到一件你亲手干过的事。「干过活」是这场面试里最值钱的东西。'},
+  structure:{good:'定位—主论点—落地，三层完整，收在动作上。', mid:'结构基本在，但缺一层：', bad:'三层缺了不止一层。记住口诀：半句定位、真事做主、一句落地。'},
+  avoid:{good:'没有踩雷，也没有压低别人抬高自己。', hit:'踩了雷区，见下方明细。'},
+  closing:{good:'把话头递给后面两位，礼貌收尾，没替任何人总结。', mid:'结尾仓促了些，可以用一句「后面还有两位同学，也想听听他们的看法」。', bad:'结尾硬。这一场没有总结环节，不需要替小组收口。'}
+};
+/* ================= AI 增强（可选，用户自带接口） ================= */
+function normBase(b){
+  b = (b||'').trim().replace(/\/+$/,'');
+  if(b && !/\/v\d+$/i.test(b)) b += '/v1';
+  return b;
+}
+function loadAiCfg(){
+  let c = {};
+  try{ c = JSON.parse(localStorage.getItem('iv_ai_cfg')||'{}') || {}; }catch(e){}
+  let key = '', remembered = false;
+  try{
+    key = sessionStorage.getItem('iv_ai_key') || '';
+    if(!key && c.remembered){ key = localStorage.getItem('iv_ai_key') || ''; remembered = !!key; }
+  }catch(e){}
+  return {base:c.base||'', model:c.model||'', spk:!!c.spk, sco:!!c.sco, remembered, key};
+}
+function saveAiCfg(cfg, key, remember){
+  try{
+    localStorage.setItem('iv_ai_cfg', JSON.stringify({base:cfg.base, model:cfg.model, spk:cfg.spk, sco:cfg.sco, remembered:remember}));
+    sessionStorage.removeItem('iv_ai_key'); localStorage.removeItem('iv_ai_key');
+    if(key){ if(remember) localStorage.setItem('iv_ai_key', key); else sessionStorage.setItem('iv_ai_key', key); }
+  }catch(e){}
+}
+function clearAiKeys(){ try{ sessionStorage.removeItem('iv_ai_key'); localStorage.removeItem('iv_ai_key'); }catch(e){} }
+let aiCfg = loadAiCfg();
+function aiEnabled(kind){
+  const ok = aiCfg.base && aiCfg.model && aiCfg.key;
+  return !!ok && (kind==='spk' ? aiCfg.spk : aiCfg.sco);
+}
+function aiStatus(msg){ const n=$('#ai-status'); if(!msg){n.style.display='none';return;} $('#ai-status-text').textContent=msg; n.style.display='flex'; }
+async function aiChat(messages, opts){
+  opts = opts||{};
+  const ctl = new AbortController();
+  const to = setTimeout(()=>ctl.abort(), opts.timeout||30000);
+  try{
+    const res = await fetch(aiCfg.base + '/chat/completions', {
+      method:'POST', signal:ctl.signal,
+      headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+aiCfg.key},
+      body:JSON.stringify({model:aiCfg.model, messages, temperature:opts.temperature??0.9, max_tokens:opts.maxTokens??300})
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const out = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if(!out) throw new Error('空响应');
+    return String(out).trim();
+  } finally { clearTimeout(to); }
+}
+function extractJSON(s){
+  const m = s.match(/\{[\s\S]*\}/);
+  if(!m) return null;
+  try{ return JSON.parse(m[0]); }catch(e){ return null; }
+}
+function spkSystemPrompt(title, seat){
+  return '你是大学学生会留任面试的模拟候选人，9 人轮流陈述同一道题，你是第 '+seat+' 号。只输出发言本身，禁止任何前缀、引号或说明文字。口播 30-60 秒（80-130 字），口语自然，有具体细节，只讲一个角度，结尾落到一个具体动作或明确判断。禁止说「学生会是锻炼自我的平台」「没经验但可以学」这类套话，禁止评价其他候选人。';
+}
+function aiScoreMessages(topicTitle, angles, speech, secs, askQ, answer, asecs){
+  const sys = '你是学生会留任面试的主考官（前届部长），与两位副考官（指导老师、主席团成员）分别独立给第 '+settings.seat+' 号候选人打分。评分维度（合计 100）：时长控制 20（目标 30-60 秒，超过 70 秒重扣）、错位切入 15（是否半句承认前人并立刻换角度；第 1 位发言者按开场干净程度给分）、角度差异化 15（与前面候选人角度重叠越多扣越多）、真事证据 20（本部门具体事件与数字，纯讲道理低分）、结构与落地 20（定位—主论点—落地动作，如「第一步是××」）、雷区规避 10（套话、贬低他人、动机存疑、评价上届本人、越权总结，每踩一项扣 3-5 分）。追问回答单独评 0-10 分。只输出一个 JSON 对象，不要多余文字：{"total":0-100,"dims":[{"label":"时长控制","score":0,"full":20},{"label":"错位切入","score":0,"full":15},{"label":"角度差异化","score":0,"full":15},{"label":"真事证据","score":0,"full":20},{"label":"结构与落地","score":0,"full":20},{"label":"雷区规避","score":0,"full":10}],"hits":[{"k":"雷区名","why":"原因"}],"comments":[{"name":"主考官 · 前届部长","say":"两句话内"},{"name":"副考官 · 指导老师","say":"两句话内"},{"name":"副考官 · 主席团成员","say":"两句话内"}],"advice":["最多三条具体改法"],"ask":{"score":0,"say":"追问答卷一句话点评"}}';
+  const u = '陈述题：'+topicTitle+'\n前面候选人已讲过的角度：'+(angles.join('、')||'无')+'\n候选人陈述（'+(secs||0).toFixed(1)+' 秒）：'+speech+'\n考官追问：'+(askQ||'无')+'\n追问回答（'+(asecs||0).toFixed(1)+' 秒）：'+(answer||'未回答');
+  return [{role:'system', content:sys},{role:'user', content:u}];
+}
+function pregenAI(order, topic){
+  state.aiGen = null; state.aiFailCount = 0;
+  if(!aiEnabled('spk')) return;
+  const angles = order.map(o=>o.angle);
+  state.aiGen = order.map((o,i)=>{
+    const p = aiChat([
+      {role:'system', content:spkSystemPrompt(topic.title, o.seat)},
+      {role:'user', content:'这道陈述题：'+topic.title+'\n前面候选人已讲过的角度：'+angles.slice(0,i).concat(angles.slice(i+1)).join('、')+'\n请从不同或更深处切入。你所在部门是'+settings.dept+'。'}
+    ], {maxTokens:240, temperature:1.0, timeout:14000}).catch(()=>null);
+    return Promise.race([p, sleep(15000).then(()=>null)]);
+  });
+}
+async function aiScoreCall(){
+  const angles = (state.listenedBeforeUser||[]).map(s=>s.angle);
+  const raw = await aiChat(
+    aiScoreMessages(TOPICS[state.topicIdx].title, angles, state.userSpeech||'', state.userSecs||0, state.askQ, state.userAnswer, state.answerSecs),
+    {maxTokens:1100, temperature:0.4, timeout:45000});
+  const j = extractJSON(raw);
+  if(!j || !Array.isArray(j.dims) || j.dims.length!==6 || !Array.isArray(j.comments)) throw new Error('格式解析失败');
+  return j;
+}
+
+/* ================= 引擎层 · 状态与工具 ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const state = {
+  topicIdx:0, seat:7, dept:DEPTS[0], tts:true, sr:true,
+  phase:'idle',          // idle | intro | others | mine | ask | report
+  turnIndex:0,           // 当前进行到第几条发言（0 基）
+  myOrderSlot:0,         // 用户在 order 中的位置
+  listened:[],           // 用户发言前选手角度 [{name,angle,text,kw}]
+  timers:[], tick:null,
+  userSpeech:'', userSecs:0,
+  askItem:null, userAnswer:'', answerSecs:0,
+  fastForward:false, busy:false,
+  keyboardMode:false
+};
+const settings = {topicIdx:-1, seat:7, dept:DEPTS[0], tts:true, sr:true};
+
+function showScreen(id){
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  $('#'+id).classList.add('active');
+  const h = $('#'+id+' h1, #'+id+' h2');
+  if(h) h.setAttribute('tabindex','-1'), h.focus({preventScroll:true});
+}
+function toast(msg, ms=2200){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), ms);
+}
+function hint(kind, text, sticky=false){
+  const h = $('#hintbar');
+  h.className = 'hintbar on ' + kind;
+  h.innerHTML = '<svg width="15" height="15" aria-hidden="true"><use href="#i-alert"/></svg><span></span>';
+  h.querySelector('span').textContent = text;
+  if(!sticky) setTimeout(()=>{ if(h.querySelector('span').textContent===text) h.classList.remove('on'); }, 5200);
+}
+function hintOff(){ const h=$('#hintbar'); h.classList.remove('on'); }
+function confirmDialog(text, onYes){
+  $('#dialog-text').textContent = text;
+  $('#dialog').classList.add('on');
+  $('#dialog-yes').onclick = ()=>{ $('#dialog').classList.remove('on'); onYes(); };
+  $('#dialog-no').onclick = ()=>$('#dialog').classList.remove('on');
+}
+function clearTimers(){ state.timers.forEach(clearTimeout); state.timers=[]; if(state.tick){clearInterval(state.tick); state.tick=null;} }
+const sleep = ms => new Promise(r=>state.timers.push(setTimeout(r, ms)));
+
+/* ================= 语音播报（TTS） ================= */
+let zhVoice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  zhVoice = vs.find(v=>/^zh([-_]CN)?$/i.test(v.lang)) || vs.find(v=>v.lang.toLowerCase().startsWith('zh')) || null;
+}
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); }
+function speak(text){
+  if(!state.tts || !('speechSynthesis' in window)) return 0;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; if(zhVoice) u.voice = zhVoice; u.rate = 1.05;
+    speechSynthesis.speak(u);
+  }catch(e){}
+  return Math.min(6500, 400 + text.length*165);
+}
+function stopSpeak(){ if('speechSynthesis' in window) try{speechSynthesis.cancel();}catch(e){} }
+
+/* ================= 语音识别（SR） ================= */
+const SRCls = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recOn = false, recStartAt = 0, recFinal = '', recCancel = false, recWatch = null;
+function srSupported(){ return !!SRCls; }
+function srCheck(){
+  const ok = srSupported();
+  const st = $('#sr-status');
+  if(ok){
+    st.textContent = '支持：按住说话，松开自动发出（Chrome / Edge 体验最佳）';
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      $('#sr-notice-text').textContent = '当前环境可能无法获取麦克风，语音输入或不可用；文字输入始终可用。';
+      $('#sr-notice').style.display = 'flex';
+    }
+  }else{
+    st.textContent = '本浏览器不支持语音识别';
+    $('#sr-toggle').setAttribute('aria-checked','false');
+    $('#sr-toggle').disabled = true;
+    $('#sr-notice-text').textContent = '当前浏览器不支持语音识别（微信内置浏览器、部分国产浏览器不支持）。请用 Chrome / Edge 打开使用语音，或直接用键盘输入——键盘模式功能完整。';
+    $('#sr-notice').style.display = 'flex';
+  }
+}
+function newRec(){
+  const r = new SRCls();
+  r.lang = 'zh-CN'; r.interimResults = true; r.continuous = true;
+  r.onresult = e=>{
+    let interim = '';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal) recFinal += t; else interim += t;
+    }
+    $('#rec-interim').textContent = (recFinal + interim).slice(-120) || '请开始陈述…';
+    if(!window._rtRec || performance.now()-window._rtRec>1400){
+      window._rtRec = performance.now();
+      if(state.phase==='mine'||state.phase==='ask') examinerReacts((recFinal+interim).slice(-90), 3200);
+    }
+  };
+  r.onerror = e=>{
+    if(e.error==='not-allowed' || e.error==='service-not-allowed'){
+      hint('err','麦克风权限被拒绝。请在浏览器地址栏的权限设置中允许麦克风，或点左侧键盘图标改用文字输入。', true);
+    }else if(e.error==='network'){
+      hint('err','语音识别服务暂时不可用（需要联网）。可改用文字输入，功能完全一样。', true);
+    }else if(e.error==='no-speech'){
+      hint('warn','没有听到声音。再按住试一次，或改用键盘输入。');
+    }else{
+      hint('err','语音识别出错了（'+e.error+'）。可改用文字输入。', true);
+    }
+  };
+  r.onend = ()=>{
+    recOn = false;
+    if(recWatch){ clearInterval(recWatch); recWatch = null; }
+    hideRecOverlay();
+    if(recCancel){ recFinal=''; recCancel=false; return; }
+    const text = recFinal.trim();
+    recFinal = '';
+    state._lastSecs = stopUserTimer();
+    if(!text){
+      toast('没听清内容。再按住说一次，或点键盘图标改用文字。');
+      setPhaseMine(true);
+      return;
+    }
+    sendUserSpeech(text);
+  };
+  return r;
+}
+async function startRec(){
+  if(recOn) return;
+  try{
+    rec = rec || newRec();
+    recFinal = ''; recCancel = false;
+    rec.start(); recOn = true; recStartAt = performance.now();
+    showRecOverlay();
+    if(!state.tick) startUserTimer();   // 键盘模式已计时的场合接续同一时段
+    recWatch = setInterval(()=>{ $('#rec-time').textContent = ((performance.now()-recStartAt)/1000).toFixed(1)+'s'; }, 100);
+  }catch(e){
+    hint('err','无法启动语音识别，请改用键盘输入。', true);
+  }
+}
+function stopRec(cancel=false){
+  if(!recOn){ if(cancel) hideRecOverlay(); return; }
+  recCancel = cancel;
+  try{ rec.stop(); }catch(e){ recOn=false; hideRecOverlay(); }
+}
+function showRecOverlay(){
+  $('#rec-time').textContent = '0.0s';
+  $('#rec-interim').textContent = '准备就绪，请开始陈述…';
+  $('#rec-overlay').classList.add('on');
+}
+function hideRecOverlay(){ $('#rec-overlay').classList.remove('on'); }
+
+/* 计时器（用户发言） */
+function startUserTimer(){
+  if(state.tick){ clearInterval(state.tick); state.tick = null; }
+  const pill = $('#timer'); pill.classList.add('on'); pill.classList.remove('mid','over');
+  const t0 = performance.now();
+  state.tick = setInterval(()=>{
+    const s = (performance.now()-t0)/1000;
+    $('#timer-val').textContent = s.toFixed(1);
+    $('#rec-time').textContent = s.toFixed(1)+'s';
+    if(s>=30 && s<60) pill.classList.add('mid');
+    if(s>=60){ pill.classList.remove('mid'); pill.classList.add('over'); }
+    if(s>=45 && !state._bored){ state._bored = true; setPose(1,'bored',5200); }
+    if(s>=60 && !state._watched){ state._watched = true; setPose(0,'watch',7000); }
+    if(s>=75 && !state._yawned){ state._yawned = true; setPose(2,'yawn',4800); }
+    if(s>=72 && !state._toldStop){ state._toldStop = true; hint('warn','时间到，该收了——超时就是偷后面两位的时间。'); }
+  }, 100);
+  state._t0 = t0; state._toldStop = false;
+}
+function stopUserTimer(){
+  if(state.tick){ clearInterval(state.tick); state.tick = null; }
+  return (performance.now()-state._t0)/1000;
+}
+
+/* ================= 开始页 ================= */
+function renderStart(){
+  const tg = $('#topic-group'); tg.innerHTML = '';
+  const rb = document.createElement('button');
+  rb.className = 'topic-opt'; rb.type = 'button';
+  rb.setAttribute('aria-pressed', String(settings.topicIdx===-1));
+  rb.innerHTML = '<span class="t">随机抽一道</span><span class="d">进考场时随机，最接近真实抽题</span>';
+  rb.onclick = ()=>{ settings.topicIdx = -1; renderStart(); };
+  tg.appendChild(rb);
+  TOPICS.forEach((t,i)=>{
+    const b = document.createElement('button');
+    b.className = 'topic-opt'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(settings.topicIdx===i));
+    b.innerHTML = '<span class="t">'+t.title+'</span><span class="d">'+t.desc+'</span>';
+    b.onclick = ()=>{ settings.topicIdx = i; renderStart(); };
+    tg.appendChild(b);
+  });
+  const dg = $('#dept-group'); dg.innerHTML = '';
+  DEPTS.forEach(d=>{
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type='button';
+    b.setAttribute('aria-pressed', String(settings.dept===d));
+    b.textContent = d;
+    b.onclick = ()=>{ settings.dept = d; renderStart(); };
+    dg.appendChild(b);
+  });
+  $('#seat-val').textContent = settings.seat;
+  $('#hero-seat').textContent = settings.seat;
+  $('#seat-dec').disabled = settings.seat<=1;
+  $('#seat-inc').disabled = settings.seat>=9;
+  $('#tts-toggle').setAttribute('aria-checked', String(settings.tts));
+  $('#sr-toggle').setAttribute('aria-checked', String(settings.sr));
+  renderHistory();
+}
+function renderHistory(){
+  const list = $('#history-list');
+  const arr = readHistory();
+  if(!arr.length){
+    list.innerHTML = '<p class="empty">还没有记录。练完第一场，分数就会出现在这里。</p>';
+    return;
+  }
+  list.innerHTML = '';
+  arr.slice(-5).reverse().forEach(it=>{
+    const d = document.createElement('div'); d.className = 'item';
+    const cls = it.score>=85?'good':(it.score>=70?'':'low');
+    d.innerHTML = '<span>'+it.date+'</span><span style="color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:45%">'+it.topic+'</span><span class="score num '+cls+'">'+it.score+'</span>';
+    list.appendChild(d);
+  });
+}
+function readHistory(){
+  try{ return JSON.parse(localStorage.getItem('iv_mock_history')||'[]'); }catch(e){ return []; }
+}
+function saveHistory(entry){
+  try{
+    const arr = readHistory(); arr.push(entry);
+    localStorage.setItem('iv_mock_history', JSON.stringify(arr.slice(-20)));
+  }catch(e){}
+}
+
+/* ================= 考场流程 ================= */
+function buildOrder(){
+  const seats = [1,2,3,4,5,6,7,8,9].filter(s=>s!==settings.seat);
+  const topic = TOPICS[state.topicIdx];
+  const order = [];
+  seats.forEach((s,i)=>{
+    const sp = topic.speeches[i];
+    const text = sp.texts[Math.floor(Math.random()*sp.texts.length)].replace(/\{dept\}/g, settings.dept);
+    order.push({seat:s, name:NAMES[s], angle:sp.angle, kw:sp.kw, text, _slot:i});
+  });
+  return order;
+}
+async function runRoom(){
+  state.phase='intro'; state.turnIndex=0; state.listened=[]; state.fastForward=false;
+  state.userSpeech=''; state.userSecs=0; state.userAnswer=''; state.answerSecs=0;
+  $('#chat').innerHTML=''; $('#draft-left').innerHTML='';
+  $('#room-progress').style.right = '100%';
+  $('#room-sub').textContent = '9 位候选人 · 考官 3 人 · '+TOPICS[state.topicIdx].title.slice(0,12)+'…';
+  const order = buildOrder();
+  state.order = order;
+  state.myOrderSlot = settings.seat - 1;
+  pregenAI(order, TOPICS[state.topicIdx]);
+
+  sysMsg('面试开始。你抽到第 '+settings.seat+' 位发言。');
+  await sleep(600);
+  const topic = TOPICS[state.topicIdx];
+  const askText = topic.ask.replace(/\{dept\}/g, settings.dept);
+  renderStageIfNeeded();
+  startPoseLoop();
+  state._watched = false; state._yawned = false; state._bored = false;
+  examinerMsg(0, '主考官 · 前届部长', askText);
+  await sleep(state.tts?Math.max(2200, 400+askText.length*150):1500);
+
+  state.phase = 'others';
+  await runSpeakers(order.slice(0, state.myOrderSlot));
+  if(state.aborted) return;
+  await userTurn(false);
+  if(state.aborted) return;
+  await runSpeakers(order.slice(state.myOrderSlot));
+  if(state.aborted) return;
+  await askRound();
+}
+async function runSpeakers(list){
+  for(const sp of list){
+    if(state.aborted) return;
+    setSpeaking(-1, false);
+    sysMsg('轮到 '+sp.seat+' 号 · '+sp.name);
+    setWait('等待中 · '+sp.seat+'号 '+sp.name+' 正在发言');
+    await sleep(state.fastForward?150:500);
+    let text = sp.text;
+    if(state.aiGen && state.aiGen[sp._slot]){
+      const g = await state.aiGen[sp._slot];
+      if(g){ text = g.replace(/^["「『]+|["」』]+$/g, '').trim(); }
+      else { state.aiFailCount++; if(state.aiFailCount===1) toast('部分选手发言 AI 生成失败，已用本地发言兜底。'); }
+    }
+    const dur = speak(text);
+    typingMsg(sp.name, sp.seat, text, state.fastForward?120:(state.tts? Math.max(900, dur-300):Math.min(2200, 500+text.length*22)));
+    await sleep(state.fastForward?260:(state.tts? Math.max(1100, dur):Math.min(2600, 700+text.length*24)));
+    state.listened.push({seat:sp.seat, name:sp.name, angle:sp.angle, kw:sp.kw, text});
+    addDraftLeft(sp);
+    updateProgress((state.turnIndex+1)/9);
+    state.turnIndex++;
+  }
+}
+function addDraftLeft(sp){
+  const li = document.createElement('li');
+  li.innerHTML = '<span class="k">'+sp.seat+'号</span>'+sp.angle;
+  $('#draft-left').appendChild(li);
+}
+async function userTurn(){
+  state.phase = 'mine';
+  setWait(null);
+  $('#comp').style.display = 'flex';
+  $('#waitbar').style.display = 'none';
+  const b = document.createElement('div');
+  b.className = 'turnbanner'; b.id = 'turnbanner';
+  b.innerHTML = '<span class="dot" aria-hidden="true"></span><span><span class="t1">轮到你了（第 '+settings.seat+' 位）</span><br><span class="t2">按住下方麦克风说话；30–60 秒内讲完。可先打开右上角草稿纸。</span></span>';
+  $('#chat').appendChild(b);
+  scrollChat();
+  setSpeaking(-1, false);
+  setPose(0,'listen',0); setPose(1,'listen',0); setPose(2,'note',0);
+  setPhaseMine(true);
+  const useSR = state.sr && srSupported() && !state.keyboardMode;
+  if(!useSR) startUserTimer();   // 键盘模式：轮到即计时，与真实考场一致
+  await new Promise(res=>{ state._resolveUser = res; });
+}
+function setPhaseMine(idle){
+  const useSR = state.sr && srSupported() && !state.keyboardMode;
+  if(useSR){
+    $('#btn-hold').style.display = 'flex';
+    $('#txtwrap').classList.remove('on');
+  }else{
+    $('#btn-hold').style.display = 'none';
+    $('#txtwrap').classList.add('on');
+    $('#txt-input').focus();
+  }
+  updateModeIcon();
+  if(idle){
+    $('#timer').classList.remove('on');
+    $('#timer-val').textContent = '0.0';
+  }
+}
+function updateModeIcon(){
+  const useSR = state.sr && srSupported() && !state.keyboardMode;
+  const u = $('#btn-mode use');
+  if(u) u.setAttribute('href', useSR ? '#i-keyboard' : '#i-mic');
+  $('#btn-mode').setAttribute('aria-label', useSR ? '切换键盘输入' : '切换语音输入');
+}
+async function sendUserSpeech(text){
+  if(state.phase==='mine' && !state.askPhase){
+    examinerReacts(text, 3600);
+    state.userSpeech = text;
+    state.userSecs = state._lastSecs || 0;
+    state.listenedBeforeUser = state.listened.slice();
+    userMsg(text);
+    state._lastSecs = null;
+    $('#timer').classList.remove('on');
+    $('#comp').style.display = 'none';
+    setWait('等待中 · 后面的候选人正在发言');
+    state.phase = 'others';
+    updateProgress((state.turnIndex+1)/9);
+    state.turnIndex++;
+    await sleep(400);
+    const res = state._resolveUser;
+    if(res){ state._resolveUser = null; res(); }
+  }else if(state.askPhase){
+    state.userAnswer = text;
+    state.answerSecs = state._lastSecs || 0;
+    state._lastSecs = null;
+    userMsg(text);
+    $('#timer').classList.remove('on');
+    $('#comp').style.display = 'none';
+    state.askPhase = false;
+    state.phase = 'closing';
+    await closingRound();
+  }
+}
+async function aiAskCall(){
+  const raw = await aiChat([
+    {role:'system', content:'你是大学学生会留任面试的主考官。候选人刚完成轮流陈述，现在轮到你追问。请提一个真实、尖锐但礼貌的追问（15-40 字），可以是：部员冲突怎么处理、学业冲突、怎么评价上一届工作、落选了怎么办、只录一人推荐谁、最大成长、活动冷场怎么办、接一个没做过的活。只输出追问句本身，禁止引号、前缀和说明。'},
+    {role:'user', content:'陈述题：'+TOPICS[state.topicIdx].title+'\n前面候选人的角度：'+((state.listenedBeforeUser||state.listened).map(s=>s.angle).join('、')||'无')+'\n候选人（第'+settings.seat+'位）的陈述：'+(state.userSpeech||'').slice(0,220)}
+  ], {maxTokens:90, temperature:1.0, timeout:20000});
+  const q = raw.replace(/^["「『]+|["」』]+$/g,'').split('\n').filter(x=>x.trim()).pop().trim();
+  if(!q || q.length<8 || q.length>60) throw new Error('格式不符');
+  return q;
+}
+async function askRound(){
+  state.phase = 'ask'; state.askPhase = true;
+  sysMsg('陈述结束 · 考官追问环节');
+  await sleep(700);
+  let q, ref;
+  if(aiEnabled('sco')){
+    try{
+      q = await aiAskCall();
+      ref = 'AI 生成的追问，没有标准答案——考官要听你的真实做法：先给具体步骤，再给一句收尾。';
+      toast('追问由 AI 现场生成。');
+    }catch(e){
+      toast('AI 追问不可用（'+e.message+'），已用题库追问。');
+    }
+  }
+  if(!q){
+    const a = ASKS[Math.floor(Math.random()*ASKS.length)];
+    state.askItem = a;
+    q = a.qs[Math.floor(Math.random()*a.qs.length)];
+    ref = a.ref;
+  }
+  state.askQ = q;
+  state.askRef = ref;
+  examinerMsg(0, '主考官 · 前届部长', q);
+  await sleep(state.tts?Math.max(1800, 400+q.length*150):1000);
+  const b = document.createElement('div');
+  b.className = 'turnbanner';
+  b.innerHTML = '<span class="dot" aria-hidden="true"></span><span><span class="t1">考官在问你</span><br><span class="t2">这一题考的是真实做法。给出具体步骤，别说漂亮话。</span></span>';
+  $('#chat').appendChild(b); scrollChat();
+  setWait(null);
+  $('#comp').style.display = 'flex';
+  setPhaseMine(true);
+}
+async function closingRound(){
+  $('#comp').style.display = 'none';
+  setWait(aiEnabled('sco') ? '面试结束 · AI 考官点评中…' : '面试结束 · 考官合分中…');
+  sysMsg('你的发言结束。考官正在合分…');
+  await sleep(state.tts?1500:800);
+  await examinerComments();
+  showReport();
+}
+async function examinerComments(){
+  let r = evaluate(state.userSpeech, state.userSecs);
+  let askScore = state.userAnswer ? evaluateAsk(state.userAnswer, state.answerSecs) : null;
+  state.aiComments = null; state.aiAdvice = null;
+  if(aiEnabled('sco')){
+    try{
+      const j = await aiScoreCall();
+      r.total = Math.max(0, Math.min(100, Math.round(j.total != null ? j.total : r.total)));
+      r.dims = j.dims.map(d=>({label:d.label, score:Math.max(0, Math.min(d.full||20, Math.round(d.score||0))), full:d.full||20}));
+      const seen = new Set(r.hits.map(h=>h.k));
+      const aiHits = (j.hits||[]).map(h=>({k:String(h.k||''), why:String(h.why||'')+'（AI 点评）', soft:false})).filter(h=>h.k && !seen.has(h.k));
+      r.hits = r.hits.concat(aiHits);
+      state.aiComments = j.comments.slice(0,3);
+      state.aiAdvice = (j.advice||[]).slice(0,3);
+      if(j.ask && askScore) askScore = {...askScore, score:Math.max(1, Math.min(10, Math.round(j.ask.score != null ? j.ask.score : askScore.score))), aiSay:String(j.ask.say||'')};
+      toast('已使用 AI 按同一份标准评分。');
+    }catch(e){ toast('AI 点评不可用（'+e.message+'），已用本地标准评分。'); }
+  }
+  setPose(0,'note',2600); setPose(1,'note',2600); setPose(2,'note',2600);
+  for(let i=0;i<EXAMINERS.length;i++){
+    const ex = EXAMINERS[i];
+    const say = state.aiComments ? (state.aiComments.find(c=>(c.name||'').includes(ex.role==='structure'?'主考官':(ex.role==='conduct'?'指导老师':'主席团')))?.say || examinerSays(ex, r, askScore)) : examinerSays(ex, r, askScore);
+    examinerMsg(i, ex.name, say);
+    if(state.tts) await sleep(Math.min(1600, 500+say.length*80));
+    else await sleep(350);
+  }
+  state.result = r; state.askResult = askScore;
+}
+/* ================= 消息渲染 ================= */
+const AV_COLORS = {1:'#4f7cc9',2:'#8f6fc0',3:'#5ba47a',4:'#c98850',5:'#b8658a',6:'#5aa5b8',8:'#8a9a4f',9:'#7f7fb8'};
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function avatar(kind, seat){
+  if(kind==='me') return '<span class="avatar" style="background:var(--accent)"><svg aria-hidden="true" style="color:#fff"><use href="#i-mic"/></svg></span>';
+  if(kind==='ex') return '<span class="avatar" style="background:var(--examiner)"><svg aria-hidden="true" style="color:#fff"><use href="#i-badge"/></svg></span>';
+  const c = AV_COLORS[seat]||'#888';
+  return '<span class="avatar num" style="background:'+c+'">'+seat+'</span>';
+}
+function sysMsg(text){
+  const d = document.createElement('div');
+  d.className = 'sysmsg'; d.textContent = text;
+  $('#chat').appendChild(d); scrollChat();
+}
+function examinerMsg(idx, name, text){
+  const d = document.createElement('div');
+  d.className = 'msg examiner';
+  d.innerHTML = avatar('ex') + '<div class="col"><div class="who">'+esc(name)+'</div><div class="bubble">'+esc(text)+'</div></div>';
+  $('#chat').appendChild(d); scrollChat();
+  setSpeaking(idx, true); setPose(idx, 'talk');
+  const est = state.tts ? Math.max(2200, speak(text)) : Math.min(4200, 900+text.length*16);
+  state.timers.push(setTimeout(()=>{
+    setSpeaking(idx, false);
+    setPose(idx, state.phase==='others'?'listen':'idle');
+  }, est));
+}
+function userMsg(text){
+  const d = document.createElement('div');
+  d.className = 'msg me';
+  d.innerHTML = '<div class="col"><div class="who">你（'+settings.seat+'号）</div><div class="bubble">'+esc(text)+'</div></div>' + avatar('me');
+  $('#chat').appendChild(d); scrollChat();
+}
+function typingMsg(name, seat, text, ms){
+  const d = document.createElement('div');
+  d.className = 'msg'; d.dataset.typing = '1';
+  d.innerHTML = avatar('o', seat) + '<div class="col"><div class="who">'+seat+'号 · '+esc(name)+'</div><div class="bubble typing" aria-label="正在发言"><i></i><i></i><i></i></div></div>';
+  $('#chat').appendChild(d); scrollChat();
+  state.timers.push(setTimeout(()=>{
+    d.innerHTML = avatar('o', seat) + '<div class="col"><div class="who">'+seat+'号 · '+esc(name)+'</div><div class="bubble">'+esc(text)+'</div></div>';
+    scrollChat();
+  }, ms));
+}
+function scrollChat(){ const c = $('#chat'); c.scrollTop = c.scrollHeight; }
+function setWait(text){
+  if(text===null){
+    $('#waitbar').style.display = 'none';
+    $('#comp').style.display = 'flex';
+  }else{
+    $('#waitbar').style.display = 'flex';
+    $('#comp').style.display = 'none';
+    $('#wait-text').textContent = text;
+  }
+}
+function updateProgress(frac){
+  $('#room-progress').style.right = (100 - Math.min(1, Math.max(0, frac))*100) + '%';
+}
+
+/* ---- 考官画面（视频宫格 · 漫画风） ---- */
+const EX_VISUALS = [
+  {wall:'#e9e3d7', suit:'#37455c', shirt:'#eef2f7', hair:'#322b28', brow:'#3a322c', skin:'#f3d6b8', glasses:true,
+   hairD:'M36,68 C37,47 46,41 60,41 C74,41 83,47 84,68 L84,61 C83,50 74,47 60,47 C46,47 37,50 36,61 Z'},
+  {wall:'#dde6ee', suit:'#54514e', shirt:'#f0ebe2', hair:'#4a382c', brow:'#3a322c', skin:'#f6dabc', glasses:false,
+   hairD:'M36,70 C36,46 46,40 60,40 C74,40 84,46 84,70 L84,97 Q84,101 80,101 L76,101 Q79,82 78,66 L78,62 C77,54 70,50 60,50 C50,50 43,54 42,62 L42,66 Q41,82 44,101 L40,101 Q36,101 36,97 Z'},
+  {wall:'#e4e8dd', suit:'#2f4a44', shirt:'#edf2ec', hair:'#26221f', brow:'#2c2724', skin:'#eecfa9', glasses:false,
+   hairD:'M38,62 C40,48 48,44 60,44 C72,44 80,48 82,62 L82,57 C80,46 72,44 60,44 C48,44 40,46 38,57 Z'}
+];
+function exFigure(v, idx, prefix){
+  const s = '#33302c', mouth = '#a2695a';
+  return '<g class="fig" id="'+prefix+'fig'+idx+'" transform="translate('+[18,135,252][idx]+',14)">'
+  +'<circle cx="60" cy="72" r="23" fill="'+v.skin+'"/>'
+  +'<path d="'+v.hairD+'" fill="'+v.hair+'"/>'
+  +'<g class="brows" fill="'+v.brow+'"><rect x="45.5" y="60.5" width="11.5" height="3" rx="1.5"/><rect x="63" y="60.5" width="11.5" height="3" rx="1.5"/></g>'
+  +'<g class="eyes-open"><ellipse cx="52" cy="69" rx="4.8" ry="4.4" fill="#fff" stroke="'+s+'" stroke-width="0.9"/><ellipse cx="68" cy="69" rx="4.8" ry="4.4" fill="#fff" stroke="'+s+'" stroke-width="0.9"/><circle class="pupil" cx="52" cy="69.5" r="2.3" fill="'+s+'"/><circle class="pupil" cx="68" cy="69.5" r="2.3" fill="'+s+'"/></g>'
+  +'<g class="eyes-closed" stroke="'+s+'" stroke-width="1.8" fill="none" stroke-linecap="round"><path d="M47.5,69 Q52,72.5 56.5,69"/><path d="M63.5,69 Q68,72.5 72.5,69"/></g>'
+  +'<g class="eyes-happy" stroke="'+s+'" stroke-width="2" fill="none" stroke-linecap="round"><path d="M47.5,71 Q52,66.5 56.5,71"/><path d="M63.5,71 Q68,66.5 72.5,71"/></g>'
+  +(v.glasses?'<g fill="none" stroke="#3a3733" stroke-width="1.6" opacity=".92"><circle cx="52" cy="69" r="7.4"/><circle cx="68" cy="69" r="7.4"/><path d="M59.4,69 h1.2"/><path d="M44.6,67.5 l-7,-1"/><path d="M75.4,67.5 l7,-1"/></g>':'')
+  +'<path class="m-neutral" d="M53,82.5 Q60,85 67,82.5" stroke="'+mouth+'" stroke-width="2" fill="none" stroke-linecap="round"/>'
+  +'<path class="m-smile" d="M51.5,81 Q60,88.5 68.5,81" stroke="'+mouth+'" stroke-width="2" fill="none" stroke-linecap="round"/>'
+  +'<path class="m-down" d="M53,85.5 Q60,81.5 67,85.5" stroke="'+mouth+'" stroke-width="2" fill="none" stroke-linecap="round"/>'
+  +'<ellipse class="m-talk" cx="60" cy="84" rx="4.6" ry="3.1" fill="#8f4a3e"/>'
+  +'<ellipse class="m-yawn" cx="60" cy="85" rx="5.5" ry="5.8" fill="#8f4a3e"/>'
+  +'<path d="M16,150 L25,118 Q37,107 60,107 Q83,107 95,118 L104,150 Z" fill="'+v.suit+'"/>'
+  +'<path d="M49,108 L60,123 L71,108 Z" fill="'+v.shirt+'"/>'
+  +'</g>';
+}
+function exArms(v, idx, prefix){
+  return '<g class="st-listen" id="'+prefix+'arms'+idx+'" transform="translate('+[18,135,252][idx]+',6)">'
+  +'<g class="armR"><path d="M90,118 Q104,126 101,142" fill="none" stroke="'+v.suit+'" stroke-width="10" stroke-linecap="round"/>'
+  +'<circle cx="101" cy="143" r="5.5" fill="'+v.skin+'"/>'
+  +'<g class="pen"><line x1="98" y1="134" x2="107" y2="146" stroke="#b98a2f" stroke-width="2.6" stroke-linecap="round"/></g></g>'
+  +'<g class="armL"><path d="M30,118 Q16,126 19,142" fill="none" stroke="'+v.suit+'" stroke-width="10" stroke-linecap="round"/>'
+  +'<circle cx="19" cy="143" r="5.5" fill="'+v.skin+'"/>'
+  +'<g class="phoneG"><rect x="10" y="118" width="13" height="21" rx="2.5" fill="#3a3a3e" stroke="#24242a" stroke-width="1"/><rect x="11.5" y="120" width="10" height="17" rx="1.5" fill="#bcd8ea"/></g></g>'
+  +'</g>';
+}
+function stageSVG(prefix){
+  return '<svg viewBox="0 0 390 175" aria-label="考官画面">'
+  +'<rect width="390" height="175" fill="#e3e7e2"/>'
+  +'<rect x="70" y="12" width="250" height="25" rx="4" fill="#d8dde4"/>'
+  +'<text x="195" y="29" text-anchor="middle" font-size="12.5" fill="#41546b" font-weight="600">研究生会 · 留任面试考场</text>'
+  +'<rect x="14" y="52" width="26" height="30" rx="2" fill="#dde2d6"/>'
+  +'<rect x="350" y="52" width="26" height="30" rx="2" fill="#dde2d6"/>'
+  + EX_VISUALS.map((v,i)=>'<g>'+exFigure(v,i,prefix)+'</g>').join('')
+  +'<rect y="130" width="390" height="45" fill="#a08163"/>'
+  +'<rect y="130" width="390" height="5" fill="#8a6d50"/>'
+  + [0,1,2].map(i=>exArms(EX_VISUALS[i], i, prefix)).join('')
+  + [78,195,312].map(x=>'<g><rect x="'+(x-16)+'" y="140" width="30" height="15" rx="1.5" fill="#fdfdfb" transform="rotate(-3 '+x+' 147)"/><line x1="'+(x-10)+'" y1="144" x2="'+(x+4)+'" y2="142" stroke="#c8c2b4" stroke-width="1.2"/></g>').join('')
+  +'<g><rect x="352" y="138" width="9" height="14" rx="2" fill="#dfe7ef" stroke="#9fb3c8"/></g>'
+  + EXAMINERS.map((ex,i)=>'<g><rect id="'+prefix+'tag'+i+'" x="'+([34,151,268][i])+'" y="144" width="88" height="19" rx="3" fill="#ffffff" stroke="#d0cabc"/><text id="'+prefix+'tagT'+i+'" x="'+([78,195,312][i])+'" y="157" text-anchor="middle" font-size="8.5" fill="#3d3a36">'+ex.name+'</text></g>').join('')
+  +'</svg>';
+}
+function renderStage(){
+  const st = $('#stage');
+  if(st && !st.children.length) st.innerHTML = stageSVG('');
+}
+function setPoseEl(w, st){
+  if(!w) return;
+  const cls = (w.getAttribute('class')||'').replace(/st-\S+/g, '').trim();
+  w.setAttribute('class', cls + (st?' st-'+st:''));
+}
+function setPose(i, st, ms){
+  const f = document.getElementById('fig'+i), a = document.getElementById('arms'+i);
+  setPoseEl(f, st); setPoseEl(a, st);
+  [f,a].forEach(w=>{
+    if(w && w._t){ clearTimeout(w._t); w._t = null; }
+  });
+  if(ms){
+    [f,a].forEach(w=>{
+      if(!w) return;
+      w._t = setTimeout(()=>{ setPoseEl(w, state.phase==='others'?'listen':''); }, ms);
+    });
+  }
+}
+function setSpeaking(i, on){
+  [0,1,2].forEach(k=>{
+    const f = document.getElementById('fig'+k);
+    if(f) f.classList.toggle('is-speaking', k===i && !!on);
+    const tag = document.getElementById('tag'+k), tagT = document.getElementById('tagT'+k);
+    if(tag){
+      tag.setAttribute('fill', (k===i&&on)?'var(--accent-soft)':'#ffffff');
+      tag.setAttribute('stroke', (k===i&&on)?'var(--accent-strong)':'#d0cabc');
+    }
+    if(tagT) tagT.setAttribute('fill', (k===i&&on)?'var(--accent-strong)':'#3d3a36');
+  });
+}
+let poseTimer = null;
+function startPoseLoop(){
+  stopPoseLoop();
+  poseTimer = setInterval(()=>{
+    if(state.aborted || state.phase!=='others') return;
+    [1,2].forEach(i=>{
+      const f = document.getElementById('fig'+i);
+      if(!f || f.classList.contains('is-speaking') || /st-(frown|watch|yawn|sleep|nod|smile|confuse)/.test(f.getAttribute('class')||'')) return;
+      const r = Math.random();
+      setPose(i, r<.34?'listen':r<.58?'note':r<.68?'idle':r<.78?'lookaway':r<.86?'cough':r<.93?'phone':'bored', 4200);
+    });
+  }, 4600);
+}
+function stopPoseLoop(){ if(poseTimer){ clearInterval(poseTimer); poseTimer = null; } }
+function renderStageIfNeeded(){
+  const st = $('#stage');
+  if(st && !st.children.length) st.innerHTML = stageSVG('');
+}
+function examinerReacts(text, ms){
+  if(!text || text.length<4) return;
+  const hard = AVOID.some(a=>!a.soft && a.re.test(text));
+  const soft = AVOID.some(a=>a.soft && a.re.test(text));
+  if(hard){ setPose(0,'frown',ms); setPose(2,'frown',ms+700); return; }
+  if(soft){ setPose(1,'confuse',ms+300); return; }
+  const good = RE_EVIDENCE.test(text) || RE_DEPT.test(text) || RE_NUM.test(text) || RE_LAND.test(text);
+  if(good){ setPose(1,'nod',2600); setPose(2,'smile',3200); }
+}
+
+/* ================= 评分引擎 ================= */
+function evaluate(text, secs){
+  text = text || '';
+  const hits = [];
+  AVOID.forEach(a=>{ if(a.re.test(text)) hits.push(a); });
+  const hard = hits.filter(h=>!h.soft).length, soft = hits.length - hard;
+
+  let L, Lsay;
+  if(secs>=30 && secs<=60){ L=20; Lsay='good'; }
+  else if((secs>25&&secs<30)||(secs>60&&secs<=70)){ L=16; Lsay='mid'; }
+  else if(secs>=20&&secs<=25){ L=12; Lsay='mid'; }
+  else if(secs>70&&secs<=80){ L=9; Lsay='over'; }
+  else if(secs>80){ L=4; Lsay='over'; }
+  else { L=6; Lsay='short'; }
+
+  const first = settings.seat===1;
+  const reloc = RE_RELOCATE.test(text), ack = RE_ACK.test(text);
+  const R = first ? 12 : reloc ? (ack?15:12) : ack ? 7 : 3;
+
+  const before = state.listenedBeforeUser || state.listened;
+  let overlap = 0; const overlapNames = [];
+  before.forEach(sp=>{ if(sp.kw.some(k=>text.indexOf(k)>=0)){ overlap++; overlapNames.push(sp.angle); } });
+  const pathEV = RE_DEPT.test(text)&&(RE_EVIDENCE.test(text)||RE_NUM.test(text));
+  const paths = [RE_DIM.test(text),RE_VIEW.test(text),pathEV,RE_GRAN.test(text)].filter(Boolean).length;
+  let D = first ? 12 : Math.max(2, Math.min(15, 15 - Math.max(0,overlap-1)*3 + (paths?2:0)));
+
+  const ev = RE_EVIDENCE.test(text), dept = RE_DEPT.test(text), num = RE_NUM.test(text);
+  const E = Math.min(20, 3 + (ev?5:0) + (dept?7:0) + (num?5:0));
+
+  const land = RE_LAND.test(text), close = RE_CLOSE.test(text), dim = RE_DIM.test(text);
+  const S = Math.min(20, (land?12:2) + (close?4:0) + (dim?3:0) + (ack?1:0));
+
+  const A = Math.max(0, 10 - hard*5 - soft*2);
+  const total = Math.round(L+R+D+E+S+A);
+  return {
+    total, hits, overlap, overlapNames, reloc, ack, ev, dept, num, land, close, dim, paths, Lsay, secs,
+    dims:[
+      {label:'时长控制', score:L, full:20},
+      {label:'错位切入', score:R, full:15},
+      {label:'角度差异化', score:D, full:15},
+      {label:'真事证据', score:E, full:20},
+      {label:'结构与落地', score:S, full:20},
+      {label:'雷区规避', score:A, full:10}
+    ]
+  };
+}
+function evaluateAsk(text, secs){
+  text = text || '';
+  const hits = AVOID.filter(a=>a.re.test(text));
+  const hard = hits.filter(h=>!h.soft).length;
+  const acts = (text.match(/(第一步|先|然后|接着|私下|写成文字|问一句|排计划|列出|找他|问他)/g)||[]).length;
+  let s = 5 + (secs>=10&&secs<=60 ? 2 : (secs<10?-3:0)) + (acts>=2?2:0) - hard*3;
+  s = Math.max(1, Math.min(10, s));
+  return {score:s, hits, secs, acts};
+}
+function examinerSays(ex, r, ask){
+  if(ex.role==='structure'){
+    const sS = r.dims[4].score>=15 ? 'good' : ((r.land||r.close) ? 'mid' : 'bad');
+    const s = SAYINGS.structure[sS];
+    const l = SAYINGS.length[r.Lsay];
+    return s + ' ' + l;
+  }
+  if(ex.role==='conduct'){
+    const a = r.hits.length ? SAYINGS.avoid.hit : SAYINGS.avoid.good;
+    const c = r.close ? SAYINGS.closing.good : SAYINGS.closing.mid;
+    return a + ' ' + c;
+  }
+  const rel = r.reloc ? SAYINGS.relocate.good : (r.ack ? SAYINGS.relocate.mid : SAYINGS.relocate.bad);
+  const evd = (r.ev||r.dept||r.num) ? SAYINGS.evidence[r.dims[3].score>=15?'good':'mid'] : SAYINGS.evidence.bad;
+  return rel + ' ' + evd;
+}
+
+/* ================= 报告 ================= */
+function gradeOf(t){ return t>=85 ? ['a','优秀 · 可以上考场'] : t>=70 ? ['b','合格 · 再磨一遍'] : ['c','需练习 · 按清单重练']; }
+function sayOf(ex, i, r, ask){
+  if(state.aiComments && state.aiComments[i] && state.aiComments[i].say) return String(state.aiComments[i].say);
+  return examinerSays(ex, r, ask);
+}
+function recsOf(r){
+  if(state.aiAdvice && state.aiAdvice.length) return state.aiAdvice.map(String);
+  return recommendations(r);
+}
+function recommendations(r){
+  const out = [];
+  if(r.Lsay==='over') out.push('练到 45 秒：主论点只保一个真事，其余砍掉。到点就停，超时是实打实的减分项。');
+  if(r.Lsay==='short') out.push('先写满三层再练顺：定位半句、真事 30 秒、落地一句。');
+  if(!r.reloc && settings.seat!==1) out.push('开头改成「前面几位谈得比较多的是××，我想换一个角度——」半句承认，立刻错位。');
+  if(!r.land) out.push('结尾落一个动作：「所以如果让我来做，第一步是××。」证明你不只出主意。');
+  if(!(r.ev||r.dept||r.num)) out.push('把主论点绑一个本部门真事：「这事我们部上学期真踩过……」用真事当证据，比讲十句道理都管用。');
+  if(r.hits.length) out.push('对照备考卡「一句都不要说」清单，把命中句逐条改写。');
+  if(!r.close) out.push('收尾用一句：「后面还有两位同学，也想听听他们的看法。」把话头递出去，但不总结。');
+  if(!out.length) out.push('打法已经很完整。换一道题、换一个位次再练一场，保持手感。');
+  return out.slice(0,3);
+}
+function showReport(){
+  const r = state.result, ask = state.askResult;
+  const topic = TOPICS[state.topicIdx];
+  const [gc, gt] = gradeOf(r.total);
+  const onesay = sayOf(EXAMINERS[0], 0, r, ask);
+  const recs = recsOf(r);
+  let html = '';
+  html += '<div class="score-hero"><div class="cap">考官综合分 · 满分 100</div>';
+  html += '<div class="big num">'+r.total+'<span class="full"> / 100</span></div>';
+  html += '<div class="grade '+gc+'">'+gt+'</div>';
+  html += '<p class="onesay">'+esc(onesay)+'</p></div>';
+
+  html += '<div class="bars">';
+  r.dims.forEach(d=>{
+    const pc = Math.round(d.score/d.full*100);
+    const cls = pc>=70?'':(pc>=45?'low':'bad');
+    html += '<div class="bar-row"><div class="bl"><span>'+d.label+'</span><span class="v num">'+d.score+'<span style="color:var(--muted);font-weight:400"> / '+d.full+'</span></span></div>';
+    html += '<div class="track"><div class="fill '+cls+'" data-w="'+pc+'"></div></div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="examiners"><h3 style="font-size:15px;font-weight:600;margin-bottom:10px">三位考官分别打分</h3>';
+  const exScores = [
+    Math.round((r.dims[4].score + r.dims[0].score + r.dims[2].score)/55*100),
+    Math.round((r.dims[5].score/10*35 + r.dims[0].score/20*35 + r.dims[1].score/15*30)),
+    Math.round((r.dims[1].score/15*35 + r.dims[3].score/20*35 + r.dims[2].score/15*30))
+  ];
+  EXAMINERS.forEach((ex,i)=>{
+    html += '<div class="excard">'+avatar('ex')+'<div class="col"><div class="nm">'+esc(ex.name)+'<span class="sc num">'+exScores[i]+'</span></div>';
+    html += '<p class="say">'+esc(sayOf(ex, i, r, ask))+'</p></div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="detail"><h3>明细与改法</h3>';
+  html += '<div class="drow ok"><span class="k">时长</span>你的陈述 '+ (r.secs||0).toFixed(1) +' 秒，目标 30–60 秒，到点就停。</div>';
+  if(r.hits.length){
+    r.hits.forEach(h=>{
+      html += '<div class="drow hit"><span class="k">雷区'+(h.soft?'（疑似）':'')+'：'+esc(h.k)+'</span>'+esc(h.why)+'<span class="quote">改法：见备考卡「一句都不要说」。</span></div>';
+    });
+  }else{
+    html += '<div class="drow ok"><span class="k">雷区</span>没有命中清单，也没有压低别人抬高自己——很好。</div>';
+  }
+  if(settings.seat!==1 && r.overlap>0){
+    html += '<div class="drow'+(r.overlap>2?' hit':'')+'"><span class="k">角度重叠</span>你提到了 '+r.overlap+' 位前面同学已讲的角度（'+esc(r.overlapNames.join('、'))+'）。观点重复不丢人，但要有「换一个角度」的错位句把它接住。</div>';
+  }
+  recs.forEach(t=>{ html += '<div class="drow"><span class="k">建议</span>'+esc(t)+'</div>'; });
+  html += '</div>';
+
+  if(state.userAnswer && ask){
+    html += '<div class="detail"><h3>追问轮 · '+esc(state.askQ||'')+'</h3>';
+    html += '<div class="drow"><span class="k">时长</span>'+ask.secs.toFixed(1)+' 秒。考官追问给 '+ask.score+' / 10。</div>';
+    if(ask.hits.length){ ask.hits.forEach(h=>{ html += '<div class="drow hit"><span class="k">雷区</span>'+esc(h.k)+'——'+esc(h.why)+'</div>'; }); }
+    html += '<div class="drow"><span class="k">参考打法</span>'+esc(state.askRef||state.askItem.ref)+'</div></div>';
+  }
+
+  html += '<div class="transcript"><h3>你的陈述原文</h3><div class="meta">第 '+settings.seat+' 位 · '+esc(settings.dept)+' · '+esc(topic.title)+'</div><blockquote>'+esc(state.userSpeech||'（空）')+'</blockquote>';
+  if(state.userAnswer) html += '<h3 style="margin-top:12px">追问回答原文</h3><blockquote>'+esc(state.userAnswer)+'</blockquote>';
+  html += '</div>';
+
+  html += '<div class="report-actions"><button class="btn" id="btn-again"><svg width="16" height="16" aria-hidden="true"><use href="#i-refresh"/></svg>再来一局</button><button class="btn ghost" id="btn-home">返回设置</button></div>';
+  $('#report-body').innerHTML = html;
+  showScreen('screen-report');
+  requestAnimationFrame(()=>{ setTimeout(()=>{ $$('#report-body .fill').forEach(f=>{ f.style.transform = 'scaleX('+(f.dataset.w/100)+')'; }); }, 60); });
+  saveHistory({date:new Date().toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'}), topic:topic.title.slice(0,14)+'…', score:r.total});
+  $('#btn-again').onclick = ()=>{ stopSpeak(); showScreen('screen-start'); renderStart(); };
+  $('#btn-home').onclick = ()=>{ stopSpeak(); showScreen('screen-start'); renderStart(); };
+}
+
+/* ================= 事件绑定与初始化 ================= */
+function startRoom(){
+  Object.assign(state, {aborted:false, askPhase:false, keyboardMode:state.keyboardMode});
+  state.topicIdx = settings.topicIdx>=0 ? settings.topicIdx : Math.floor(Math.random()*TOPICS.length);
+  Object.assign(state, {seat:settings.seat, dept:settings.dept, tts:settings.tts, sr:settings.sr});
+  if((aiCfg.spk || aiCfg.sco) && !(aiCfg.base && aiCfg.model && aiCfg.key)){
+    aiCfg.spk = false; aiCfg.sco = false;
+    toast('AI 已开启但接口没配全，本场使用本地模式。');
+  }
+  stopSpeak();
+  showScreen('screen-room');
+  runRoom();
+}
+function abortRoom(){
+  clearTimers(); stopSpeak(); stopPoseLoop();
+  state.aborted = true; state.phase = 'idle'; state.askPhase = false;
+  if(state._resolveUser){ const r = state._resolveUser; state._resolveUser = null; r(); }
+  $('#comp').style.display = 'none';
+  $('#timer').classList.remove('on');
+  hintOff(); hideRecOverlay();
+  showScreen('screen-start'); renderStart();
+}
+$('#seat-dec').onclick = ()=>{ if(settings.seat>1){ settings.seat--; renderStart(); } };
+$('#seat-inc').onclick = ()=>{ if(settings.seat<9){ settings.seat++; renderStart(); } };
+$('#tts-toggle').onclick = function(){ settings.tts = settings.tts!==true; this.setAttribute('aria-checked', String(settings.tts)); if(!settings.tts) stopSpeak(); };
+$('#sr-toggle').onclick = function(){
+  if(this.disabled) return;
+  settings.sr = settings.sr!==true;
+  this.setAttribute('aria-checked', String(settings.sr));
+  state.keyboardMode = !settings.sr;
+};
+$('#btn-enter').onclick = ()=>{
+  if(!srSupported()) settings.sr = false;
+  startRoom();
+};
+$('#btn-back').onclick = ()=>{
+  if(state.phase==='idle' || state.phase==='report') { showScreen('screen-start'); renderStart(); }
+  else confirmDialog('面试还在进行中。确定退出吗？本次练习不会保存。', abortRoom);
+};
+$('#btn-ff').onclick = ()=>{
+  state.fastForward = true; stopSpeak();
+  toast('已快进：跳过等待，直接看发言内容。');
+};
+$('#btn-ref').onclick = openSheet;
+$('#btn-sheet-close').onclick = closeSheet;
+$('#sheet-mask').onclick = closeSheet;
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('#sheet').classList.contains('on')) closeSheet(); });
+function openSheet(){ $('#sheet').classList.add('on'); $('#sheet-mask').classList.add('on'); $('#btn-sheet-close').focus(); }
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#sheet-mask').classList.remove('on'); }
+$('#btn-mode').onclick = ()=>{
+  state.keyboardMode = !state.keyboardMode;
+  toast(state.keyboardMode ? '已切换到键盘输入。' : '已切换到按住说话。');
+  updateModeIcon();
+  if(state.phase==='mine') setPhaseMine(false);
+};
+$('#btn-hold').addEventListener('pointerdown', e=>{
+  if(state.phase!=='mine' && state.phase!=='ask') return;
+  e.preventDefault();
+  try{ $('#btn-hold').setPointerCapture(e.pointerId); }catch(err){}
+  $('#btn-hold').classList.add('rec');
+  startRec();
+});
+const releaseHold = e=>{
+  if(!recOn) return;
+  e.preventDefault();
+  $('#btn-hold').classList.remove('rec');
+  stopRec(false);
+};
+$('#btn-hold').addEventListener('pointerup', releaseHold);
+$('#btn-hold').addEventListener('pointercancel', releaseHold);
+$('#btn-rec-cancel').onclick = ()=>{ $('#btn-hold').classList.remove('rec'); stopRec(true); };
+$('#txt-input').addEventListener('input', ()=>{
+  $('#btn-send').disabled = !$('#txt-input').value.trim();
+  clearTimeout(window._rtT);
+  window._rtT = setTimeout(()=>{ if(state.phase==='mine'||state.phase==='ask') examinerReacts($('#txt-input').value, 3400); }, 700);
+});
+function sendText(){
+  const v = $('#txt-input').value.trim();
+  if(!v){ toast('先输入你的发言内容。'); return; }
+  if(state.tick) state._lastSecs = stopUserTimer();
+  $('#txt-input').value = ''; $('#btn-send').disabled = true;
+  sendUserSpeech(v);
+}
+$('#btn-send').onclick = sendText;
+$('#txt-input').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing) sendText(); });
+/* ---- AI 配置卡 ---- */
+function toggleAiBody(){
+  const b = $('#ai-body');
+  const open = b.style.display !== 'none';
+  b.style.display = open ? 'none' : 'block';
+  $('#ai-chev').classList.toggle('open', !open);
+  $('#ai-head').setAttribute('aria-expanded', String(!open));
+}
+function saveFromUi(){
+  const remember = $('#ai-remember').checked;
+  aiCfg = {
+    base: normBase($('#ai-base').value),
+    model: $('#ai-model').value.trim(),
+    spk: $('#ai-spk').getAttribute('aria-checked')==='true',
+    sco: $('#ai-sco').getAttribute('aria-checked')==='true',
+    remembered: remember,
+    key: $('#ai-key').value.trim()
+  };
+  saveAiCfg(aiCfg, aiCfg.key, remember);
+}
+async function fetchModels(){
+  const base = normBase($('#ai-base').value);
+  const key = $('#ai-key').value.trim();
+  if(!base){ aiStatus('先填接口地址。'); return; }
+  const btn = $('#ai-fetch');
+  btn.disabled = true; btn.textContent = '拉取中';
+  try{
+    const res = await fetch(base + '/models', { headers: key ? {'Authorization':'Bearer '+key} : {} });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const arr = Array.isArray(data) ? data : (data.data || data.models || []);
+    const ids = arr.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+    if(!ids.length) throw new Error('empty');
+    const sel = $('#ai-model-list');
+    sel.innerHTML = ids.map(id=>'<option>'+esc(id)+'</option>').join('');
+    sel.style.display = 'block';
+    aiStatus('拉到 '+ids.length+' 个模型：下拉选择后自动填入。');
+  }catch(e){
+    aiStatus('拉取失败。检查：地址是否以 /v1 结尾、Key 是否有效、服务商是否允许网页直连（CORS）、本机 Ollama 是否已启动。');
+  }
+  btn.disabled = false; btn.textContent = '拉取';
+}
+function bindAiCard(){
+  $('#ai-base').value = aiCfg.base;
+  $('#ai-model').value = aiCfg.model;
+  $('#ai-key').value = aiCfg.key || '';
+  $('#ai-remember').checked = !!aiCfg.remembered;
+  $('#ai-spk').setAttribute('aria-checked', String(!!aiCfg.spk));
+  $('#ai-sco').setAttribute('aria-checked', String(!!aiCfg.sco));
+  $('#ai-head').addEventListener('click', toggleAiBody);
+  $('#ai-head').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleAiBody(); } });
+  $('#ai-clear').addEventListener('click', ()=>{ clearAiKeys(); $('#ai-key').value=''; $('#ai-remember').checked=false; saveFromUi(); aiCfg.key=''; aiStatus('密钥已从本机清除。'); });
+  $('#ai-fetch').addEventListener('click', fetchModels);
+  $('#ai-model-list').addEventListener('change', function(){ $('#ai-model').value = this.value; this.style.display='none'; saveFromUi(); });
+  $('#ai-spk').addEventListener('click', function(){ this.setAttribute('aria-checked', String(this.getAttribute('aria-checked')!=='true')); saveFromUi(); });
+  $('#ai-sco').addEventListener('click', function(){ this.setAttribute('aria-checked', String(this.getAttribute('aria-checked')!=='true')); saveFromUi(); });
+  ['#ai-base','#ai-model','#ai-key','#ai-remember'].forEach(sel=>{
+    $(sel).addEventListener('change', saveFromUi);
+  });
+}
+/* ---- 设置面板 ---- */
+function openSetSheet(){
+  renderPreview();
+  $('#set-sheet').classList.add('on');
+  $('#set-mask').classList.add('on');
+  $('#btn-set-close').focus();
+}
+function closeSetSheet(){
+  $('#set-sheet').classList.remove('on');
+  $('#set-mask').classList.remove('on');
+}
+$('#btn-settings').addEventListener('click', openSetSheet);
+$('#btn-set-close').addEventListener('click', closeSetSheet);
+$('#set-mask').addEventListener('click', closeSetSheet);
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if($('#set-sheet').classList.contains('on')) closeSetSheet();
+    else if($('#sheet').classList.contains('on')) closeSheet();
+  }
+});
+function renderPreview(){
+  const mini = $('#preview-strip-mini');
+  if(mini && !mini.children.length) mini.innerHTML = stageSVG('m');
+  const full = $('#preview-strip');
+  if(full && !full.children.length) full.innerHTML = stageSVG('p');
+  const chips = $('#pose-chips');
+  if(chips && !chips.children.length){
+    const poses = [['listen','倾听'],['smile','笑'],['nod','点头'],['note','记录'],['frown','皱眉'],['confuse','疑惑'],['bored','无聊'],['sleep','困'],['yawn','打哈欠'],['lookaway','斜眼'],['phone','玩手机'],['cough','咳嗽'],['watch','看表'],['talk','说话']];
+    chips.innerHTML = poses.map(p=>'<button class="chip" data-pose="'+p[0]+'">'+p[1]+'</button>').join('');
+    chips.querySelectorAll('.chip').forEach(b=>{
+      b.addEventListener('click', ()=>previewPose(b.dataset.pose));
+    });
+  }
+}
+function previewPose(p){
+  [0,1,2].forEach(i=>{
+    setPoseEl(document.getElementById('pfig'+i), p);
+    setPoseEl(document.getElementById('parms'+i), p);
+  });
+}
+/* ---- 考官画面开关 ---- */
+$('#btn-cam').addEventListener('click', function(){
+  const off = $('#stage-wrap').classList.toggle('off');
+  this.setAttribute('aria-pressed', String(!off));
+  try{ localStorage.setItem('iv_cam', off?'0':'1'); }catch(e){}
+});
+try{
+  if(localStorage.getItem('iv_cam')==='0'){
+    $('#stage-wrap').classList.add('off');
+    $('#btn-cam').setAttribute('aria-pressed','false');
+  }
+}catch(e){}
+bindAiCard();
+renderStart();
+srCheck();
+renderPreview();
+
+</script>
+<!--@@SPLIT@@-->
+</body>
+</html>
