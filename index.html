@@ -982,8 +982,63 @@ function extractJSON(s){
   if(!m) return null;
   try{ return JSON.parse(m[0]); }catch(e){ return null; }
 }
+/* 从模型输出里提取真正的发言/追问：推理模型常把要求复述、思考和字数统计混进 content，
+   真话通常在引号里；提取失败返回空串，调用方走本地兜底 */
+function cjkCount(s){ return (String(s).match(/[\u4e00-\u9fff]/g)||[]).length; }
+function cjkRatio(s){
+  const t = String(s).replace(/\s/g,'');
+  return t.length ? cjkCount(t)/t.length : 0;
+}
+const QCHAR = /["\u201c\u201d\u300c\u300d\u300e\u300f]/;
+const SPK_META = /(用户要求|关键要求|要求[:：]|禁止|候选|模拟|前缀|说明文字|口播|字数|字符|角度[:：]|已讲过|Need\s|Need\b|Count|Let's|Candidate|requirement|prefix|character|simulate|Department|Topic\b|angle)/i;
+function quoteSpans(t){
+  const marks = [];
+  for(const m of String(t).matchAll(/["\u201c\u201d\u300c\u300d\u300e\u300f]/g)) marks.push(m.index);
+  const spans = [];
+  for(let i=0;i+1<marks.length;i++) spans.push(String(t).slice(marks[i]+1, marks[i+1]));
+  if(marks.length) spans.push(String(t).slice(marks[marks.length-1]+1));
+  return spans;
+}
+function spanOk(s, minCjk){
+  return cjkCount(s) >= minCjk && cjkRatio(s) >= 0.65 && !SPK_META.test(s);
+}
+function cleanSpeech(raw){
+  if(!raw) return '';
+  const t = String(raw).replace(/```[a-z]*\n?/g,'```').trim();
+  const parts = [];
+  for(const s of quoteSpans(t)){
+    const seg = s.replace(QCHAR,'').trim();
+    if(spanOk(seg, 25)) parts.push(seg);
+  }
+  const out = parts.join('');
+  if(cjkCount(out) >= 30) return out;
+  if(!SPK_META.test(t) && cjkRatio(t) >= 0.7 && cjkCount(t) >= 30 && cjkCount(t) <= 260)
+    return t.replace(/^[\s"'「『]+|[\s"'」』]+$/g,'');
+  return '';
+}
+function cleanAsk(raw){
+  if(!raw) return '';
+  const t = String(raw).replace(/```[a-z]*\n?/g,'```').trim();
+  const cands = [];
+  for(const s of quoteSpans(t)){
+    const seg = s.replace(QCHAR,'').trim().replace(/^[-\s·]+/,'');
+    if(spanOk(seg, 8) && /[？?]/.test(seg) && cjkCount(seg) <= 60) cands.push(seg);
+  }
+  for(const m of t.matchAll(/[^\n。！？!?]{6,80}[？?]/g)){
+    const seg = m[0].replace(/^[-\s·"“「『]+|["”」』]+$/g,'').trim();
+    if(spanOk(seg, 8) && cjkCount(seg) <= 60) cands.push(seg);
+  }
+  for(const m of t.matchAll(/[\u4e00-\u9fff][\u4e00-\u9fff，、；0-9]*[？?]/g)){
+    const seg = m[0].trim();
+    if(spanOk(seg, 8) && cjkCount(seg) <= 60) cands.push(seg);
+  }
+  if(cands.length) return cands[0];
+  const whole = t.replace(/^["「『]+|["」』]+$/g,'').trim();
+  if(/[？?]/.test(whole) && !SPK_META.test(whole) && cjkRatio(whole) >= 0.6 && cjkCount(whole) >= 8 && cjkCount(whole) <= 60) return whole;
+  return '';
+}
 function spkSystemPrompt(title, seat){
-  return '你是大学学生会留任面试的模拟候选人，9 人轮流陈述同一道题，你是第 '+seat+' 号。只输出发言本身，禁止任何前缀、引号或说明文字。口播 30-60 秒（80-130 字），像真人当面随口说出来的：句子长短不一，多用「其实」「说白了」「后来」「结果」这类口语词，可以带一点不完美的表达。只讲一个角度，有具体细节，结尾落到一个具体动作或明确判断。硬性禁止：排比句、「首先/其次/最后」、「不仅…更…」、「综上所述/总而言之」等书面总结腔、华丽形容词堆砌、感叹号连用；禁止说「学生会是锻炼自我的平台」「没经验但可以学」这类套话；禁止评价其他候选人。';
+  return '你是大学学生会留任面试的模拟候选人，9 人轮流陈述同一道题，你是第 '+seat+' 号。只输出发言本身，禁止任何前缀、引号或说明文字。口播 30-60 秒（80-130 字），像真人当面随口说出来的：句子长短不一，多用「其实」「说白了」「后来」「结果」这类口语词，可以带一点不完美的表达。只讲一个角度，有具体细节，结尾落到一个具体动作或明确判断。硬性禁止：排比句、「首先/其次/最后」、「不仅…更…」、「综上所述/总而言之」等书面总结腔、华丽形容词堆砌、感叹号连用；禁止说「学生会是锻炼自我的平台」「没经验但可以学」这类套话；禁止评价其他候选人。不要复述、翻译或解释这些要求，不要输出思考过程、计划或字数统计，直接给最终发言。';
 }
 function aiScoreMessages(topicTitle, angles, speech, secs, askQ, answer, asecs){
   const sys = '你是学生会留任面试的主考官（前届部长），和两位副考官（指导老师、主席团成员）分别独立给第 '+settings.seat+' 号候选人打分。评分维度（合计 100）：时长控制 20（目标 30-60 秒，超过 70 秒重扣）、错位切入 15（是否半句承认前人并立刻换角度；第 1 位发言者按开场干净程度给分）、角度差异化 15（与前面候选人角度重叠越多扣越多）、真事证据 20（本部门具体事件与数字，纯讲道理低分）、结构与落地 20（定位—主论点—落地动作，如「第一步是××」）、雷区规避 10（套话、贬低他人、动机存疑、评价上届本人、越权总结，每踩一项扣 3-5 分）。追问回答单独评 0-10 分。评语像考官当面随口说的：口语、短句、具体到某一句话或某个细节，禁止书面总结腔和套话，两句话以内。只输出一个 JSON 对象，不要多余文字：{"total":0-100,"dims":[{"label":"时长控制","score":0,"full":20},{"label":"错位切入","score":0,"full":15},{"label":"角度差异化","score":0,"full":15},{"label":"真事证据","score":0,"full":20},{"label":"结构与落地","score":0,"full":20},{"label":"雷区规避","score":0,"full":10}],"hits":[{"k":"雷区名","why":"原因"}],"comments":[{"name":"主考官 · 前届部长","say":"两句话内"},{"name":"副考官 · 指导老师","say":"两句话内"},{"name":"副考官 · 主席团成员","say":"两句话内"}],"advice":["最多三条具体改法，口语化"],"ask":{"score":0,"say":"追问答卷一句话点评"}}';
@@ -998,7 +1053,7 @@ function pregenAI(order, topic){
     const p = aiChat([
       {role:'system', content:spkSystemPrompt(topic.title, o.seat)},
       {role:'user', content:'这道陈述题：'+topic.title+'\n前面候选人已讲过的角度：'+angles.slice(0,i).concat(angles.slice(i+1)).join('、')+'\n请从不同或更深处切入。你所在部门是'+settings.dept+'。'}
-    ], {maxTokens:500, temperature:1.0, timeout:20000}).catch(()=>null);
+    ], {maxTokens:700, temperature:1.0, timeout:20000}).catch(()=>null);
     return Promise.race([p, sleep(15000).then(()=>null)]);
   });
 }
@@ -1318,7 +1373,8 @@ async function runSpeakers(list){
     let text = sp.text;
     if(state.aiGen && state.aiGen[sp._slot]){
       const g = await state.aiGen[sp._slot];
-      if(g){ text = g.replace(/^["「『]+|["」』]+$/g, '').trim(); }
+      const c = g ? cleanSpeech(g) : '';
+      if(c){ text = c; }
       else { state.aiFailCount++; if(state.aiFailCount===1) toast('部分选手发言 AI 生成失败，已用本地发言兜底。'); }
     }
     const dur = speak(text);
@@ -1405,10 +1461,10 @@ async function sendUserSpeech(text){
 }
 async function aiAskCall(){
   const raw = await aiChat([
-    {role:'system', content:'你是大学学生会留任面试的主考官，学长学姐身份，说话像平时开会提问那样自然。候选人刚陈述完，轮到你追问。请提一个真实、有点尖锐但不失礼貌的追问（15-40 字），方向：部员闹矛盾、学业冲突、上一届工作的不足、落选了怎么办、只录一人推荐谁、最大成长、活动冷场、接没做过的活。像随口问出来的，别像念稿子。只输出追问句本身，禁止引号、前缀、书面语和说明。'},
+    {role:'system', content:'你是大学学生会留任面试的主考官，学长学姐身份，说话像平时开会提问那样自然。候选人刚陈述完，轮到你追问。请提一个真实、有点尖锐但不失礼貌的追问（15-40 字），方向：部员闹矛盾、学业冲突、上一届工作的不足、落选了怎么办、只录一人推荐谁、最大成长、活动冷场、接没做过的活。像随口问出来的，别像念稿子。只输出追问句本身，禁止引号、前缀、书面语和说明。不要复述要求或输出思考过程。'},
     {role:'user', content:'陈述题：'+TOPICS[state.topicIdx].title+'\n前面候选人的角度：'+((state.listenedBeforeUser||state.listened).map(s=>s.angle).join('、')||'无')+'\n候选人（第'+settings.seat+'位）的陈述：'+(state.userSpeech||'').slice(0,220)}
     ], {maxTokens:300, temperature:1.0, timeout:30000});
-  const q = raw.replace(/^["「『]+|["」』]+$/g,'').split('\n').filter(x=>x.trim()).pop().trim();
+  const q = cleanAsk(raw);
   if(!q || q.length<8 || q.length>60) throw new Error('格式不符');
   return q;
 }
