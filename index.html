@@ -1277,12 +1277,32 @@ async function runRoom(){
   await askRound();
 }
 async function runSpeakers(list){
-  for(const sp of list){
+  for(let i=0;i<list.length;i++){
+    const sp = list[i];
     if(state.aborted) return;
+    // 快进模式：剩余发言立即全部上屏（绕开安卓浏览器对定时器的节流）
+    if(state.fastForward){
+      for(let j=i;j<list.length;j++){
+        const s2 = list[j];
+        if(state.aborted) return;
+        setSpeaking(-1, false);
+        sysMsg('轮到 '+s2.seat+' 号 · '+s2.name);
+        const d = document.createElement('div');
+        d.className = 'msg';
+        d.innerHTML = avatar('o', s2.seat) + '<div class="col"><div class="who">'+s2.seat+'号 · '+esc(s2.name)+'</div><div class="bubble">'+esc(s2.text)+'</div></div>';
+        $('#chat').appendChild(d);
+        state.listened.push({seat:s2.seat, name:s2.name, angle:s2.angle, kw:s2.kw, text:s2.text});
+        addDraftLeft(s2);
+        updateProgress((state.turnIndex+1)/9);
+        state.turnIndex++;
+      }
+      scrollChat();
+      return;
+    }
     setSpeaking(-1, false);
     sysMsg('轮到 '+sp.seat+' 号 · '+sp.name);
     setWait('等待中 · '+sp.seat+'号 '+sp.name+' 正在发言');
-    await sleep(state.fastForward?150:500);
+    await sleep(500);
     let text = sp.text;
     if(state.aiGen && state.aiGen[sp._slot]){
       const g = await state.aiGen[sp._slot];
@@ -1290,8 +1310,8 @@ async function runSpeakers(list){
       else { state.aiFailCount++; if(state.aiFailCount===1) toast('部分选手发言 AI 生成失败，已用本地发言兜底。'); }
     }
     const dur = speak(text);
-    typingMsg(sp.name, sp.seat, text, state.fastForward?120:(state.tts? Math.max(900, dur-300):Math.min(2200, 500+text.length*22)));
-    await sleep(state.fastForward?260:(state.tts? Math.max(1100, dur):Math.min(2600, 700+text.length*24)));
+    typingMsg(sp.name, sp.seat, text, state.tts? Math.max(900, dur-300):Math.min(2200, 500+text.length*22));
+    await sleep(state.tts? Math.max(1100, dur):Math.min(2600, 700+text.length*24));
     state.listened.push({seat:sp.seat, name:sp.name, angle:sp.angle, kw:sp.kw, text});
     addDraftLeft(sp);
     updateProgress((state.turnIndex+1)/9);
@@ -1411,6 +1431,10 @@ async function askRound(){
   setWait(null);
   $('#comp').style.display = 'flex';
   setPhaseMine(true);
+  // 追问轮键盘模式：轮到即计时，与真实考场一致；并重置时长阶梯标志
+  const useSRAsk = state.sr && srSupported() && !state.keyboardMode;
+  state._toldStop = false; state._bored = false; state._watched = false; state._yawned = false;
+  if(!useSRAsk) startUserTimer();
 }
 async function closingRound(){
   $('#comp').style.display = 'none';
@@ -1941,7 +1965,7 @@ function wizGo(n){
 }
 function openSetSheet(){
   renderPreview();
-  wizGo(localStorage.getItem('iv_onboarded') ? 2 : 0);
+  wizGo(0);
   $('#set-sheet').classList.add('on');
   $('#set-mask').classList.add('on');
   $('#btn-set-close').focus();
