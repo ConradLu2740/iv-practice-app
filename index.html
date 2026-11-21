@@ -486,10 +486,10 @@ svg{display:block}
         <div class="card" id="ai-card">
           <h3 style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none" id="ai-head" role="button" tabindex="0" aria-expanded="false">AI 增强（可选 · 用你自己的模型接口）<svg class="chev" id="ai-chev" aria-hidden="true"><use href="#i-back"/></svg></h3>
           <div id="ai-body" style="display:none">
-            <p class="ai-sec">有模型接口就填：选手发言每轮不重样、追问现场出、点评更贴你的原话。密钥只保存在你本机浏览器，请求直连你填的地址，不经任何第三方。没有接口就点下一步——本地模式离线可用，完全够练。</p>
+            <p class="ai-sec">有模型接口就填：选手发言每轮不重样、追问现场出、点评更贴你的原话。默认已填 StepFun（阶跃星辰）的接口地址，去 platform.stepfun.com 申请 API Key 填进来即可。密钥只保存在你本机浏览器，请求直连你填的地址，不经任何第三方。没有接口就点下一步——本地模式离线可用，完全够练。</p>
             <div class="field">
               <label for="ai-base">接口地址 Base URL</label>
-              <input class="in" id="ai-base" type="url" placeholder="https://api.deepseek.com/v1" style="width:100%" autocomplete="off">
+              <input class="in" id="ai-base" type="url" placeholder="https://api.stepfun.com/v1" style="width:100%" autocomplete="off">
             </div>
             <div class="field">
               <label for="ai-key">API Key</label>
@@ -502,7 +502,7 @@ svg{display:block}
             <div class="field">
               <label for="ai-model">模型</label>
               <div style="display:flex;gap:8px">
-                <input class="in" id="ai-model" type="text" placeholder="如 deepseek-chat，或点「拉取」获取列表">
+                <input class="in" id="ai-model" type="text" placeholder="如 step-2-mini，或点「拉取」获取列表">
                 <button class="btn ghost" id="ai-fetch" style="min-height:44px;padding:0 14px;font-size:13px">拉取</button>
               </div>
               <select id="ai-model-list" class="in" style="display:none;width:100%;margin-top:8px" aria-label="从接口拉取的模型列表"></select>
@@ -1937,7 +1937,7 @@ async function fetchModels(){
   btn.disabled = false; btn.textContent = '拉取';
 }
 function bindAiCard(){
-  $('#ai-base').value = aiCfg.base;
+  $('#ai-base').value = aiCfg.base || 'https://api.stepfun.com/v1';
   $('#ai-model').value = aiCfg.model;
   $('#ai-key').value = aiCfg.key || '';
   $('#ai-remember').checked = !!aiCfg.remembered;
