@@ -485,6 +485,9 @@ svg{display:block}
           <div class="chips" id="pose-chips" style="margin-top:10px"></div>
           <p class="ai-sec" style="margin-top:8px">点上面的按钮试试他们的表情。考场右上角随时可关画面。</p>
         </div>
+        <div class="wiz-nav">
+          <button type="button" class="btn" id="wiz-next0">下一步：要不要接 AI</button>
+        </div>
       </div>
       <div class="wiz-step" data-step="1" style="display:none">
         <div class="card" id="ai-card">
@@ -1988,6 +1991,7 @@ document.addEventListener('keydown', e=>{
   }
 });
 $('#wiz-next').addEventListener('click', ()=>wizGo(wizStep+1));
+$('#wiz-next0').addEventListener('click', ()=>wizGo(wizStep+1));
 $('#wiz-prev').addEventListener('click', ()=>wizGo(wizStep-1));
 $('#wiz-prev2').addEventListener('click', ()=>wizGo(wizStep-1));
 $('#wiz-skip').addEventListener('click', ()=>{ closeSetSheet(); startRoom(); });
