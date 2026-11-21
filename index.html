@@ -1107,7 +1107,7 @@ function newRec(){
     }else if(e.error==='no-speech'){
       hint('warn','没有听到声音。再按住试一次，或改用键盘输入。');
     }else{
-      hint('err','语音识别出错了（'+e.error+'）。可改用文字输入。', true);
+      hint('err','语音识别出错了（'+e.error+'）。安卓手机或大陆网络下这是常见情况——点左侧键盘图标改文字输入，功能完全一样；iPhone 的 Safari 和电脑的 Chrome/Edge 一般可用。', true);
     }
   };
   r.onend = ()=>{
