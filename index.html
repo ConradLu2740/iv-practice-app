@@ -150,6 +150,13 @@ svg{display:block}
 .eyes-closed,.eyes-happy,.m-talk,.m-down,.m-smile,.m-yawn,.phoneG{opacity:0}
 .m-neutral{opacity:1}
 .tagR,.tagT{transition:.3s var(--ease)}
+/* 向导 */
+.wiz-steps{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.wdot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s}
+.wdot.on{background:var(--accent-strong)}
+.wiz-skip{margin-left:auto;font-size:12px;color:var(--accent-strong);text-decoration:underline;min-height:32px;padding:0 4px}
+.wiz-nav{display:flex;gap:10px;margin-top:14px}
+.wiz-nav .btn{flex:1}
 .pen{opacity:0;transition:opacity .3s}
 .st-listen .m-smile,.st-idle .m-smile{opacity:1}
 .st-listen .m-neutral,.st-idle .m-neutral{opacity:0}
@@ -456,90 +463,113 @@ svg{display:block}
       <button class="iconbtn" id="btn-set-close" aria-label="关闭设置"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
     <div class="sheet-body">
-      <div class="card" style="background:var(--surface-2)">
-        <h3>考官画面预览</h3>
-        <div class="stage" id="preview-strip"></div>
-        <div class="chips" id="pose-chips" style="margin-top:10px"></div>
-        <p class="ai-sec" style="margin-top:8px">考场里他们会实时被你带动：踩雷当场皱眉、讲真事点头、说太久看表打哈欠、答太空歪头疑惑。</p>
+      <div class="wiz-steps">
+        <span class="wdot on" data-d="0"></span><span class="wdot" data-d="1"></span><span class="wdot" data-d="2"></span>
+        <button type="button" class="wiz-skip" id="wiz-skip">跳过引导，直接开始</button>
       </div>
-      <div class="card">
-        <h3>考场规则</h3>
-        <ul class="rule-list">
-          <li><span class="no num">1</span><span>9 人同场，抽签定序，按顺序轮流陈述，没有自由讨论和总结陈词。</span></li>
-          <li><span class="no num">2</span><span>每人一个固定时段，到点就停——超时是实打实的减分项。</span></li>
-          <li><span class="no num">3</span><span>考官不在选“谁主导了讨论”，是分别给 9 个人打分、互相比较。</span></li>
-          <li><span class="no num">4</span><span>陈述之后，考官可能追问，答法同样计入印象。</span></li>
-        </ul>
-      </div>
-      <div class="card">
-        <div class="field">
-          <label id="topic-label">陈述题（模拟选手和你答同一道题）</label>
-          <div role="group" aria-labelledby="topic-label" id="topic-group"></div>
+      <div class="wiz-step" data-step="0">
+        <div class="card">
+          <h3>这是一个模拟考场</h3>
+          <ul class="rule-list">
+            <li><span class="no num">1</span><span>9 人轮流陈述同一道题，你默认第 7 位发言。</span></li>
+            <li><span class="no num">2</span><span>三位漫画考官实时给你反应：讲真事点头，踩雷皱眉，说太久看表打哈欠。</span></li>
+            <li><span class="no num">3</span><span>答完考官追问，出一份六维评分报告，分数只存本机。</span></li>
+          </ul>
         </div>
-        <div class="field">
-          <label for="seat-val">我的发言位次（1–9）</label>
-          <div class="seat-row">
-            <div class="stepper">
-              <button type="button" id="seat-dec" aria-label="位次减一">−</button>
-              <span class="val num" id="seat-val" aria-live="polite">7</span>
-              <button type="button" id="seat-inc" aria-label="位次加一">＋</button>
-            </div>
-            <span style="font-size:12px;color:var(--muted)">默认第 7 位，即指南的基准打法</span>
-          </div>
-        </div>
-        <div class="field">
-          <label id="dept-label">我的部门（用于生成发言与点评）</label>
-          <div class="chips" role="group" aria-labelledby="dept-label" id="dept-group"></div>
-        </div>
-        <div class="field switchrow">
-          <span><span class="lab">语音播报</span><br><span class="sub">模拟选手与考官“开口说话”，关闭则静音快进</span></span>
-          <button type="button" class="toggle" id="tts-toggle" role="switch" aria-checked="true" aria-label="语音播报开关"></button>
-        </div>
-        <div class="field switchrow">
-          <span><span class="lab">按住说话（语音输入）</span><br><span class="sub" id="sr-status">检测浏览器支持中…</span></span>
-          <button type="button" class="toggle" id="sr-toggle" role="switch" aria-checked="true" aria-label="语音输入开关"></button>
-        </div>
-        <div class="notice info" id="sr-notice" style="display:none">
-          <svg aria-hidden="true"><use href="#i-alert"/></svg>
-          <span id="sr-notice-text"></span>
+        <div class="card" style="padding:8px">
+          <div class="stage" id="preview-strip"></div>
+          <div class="chips" id="pose-chips" style="margin-top:10px"></div>
+          <p class="ai-sec" style="margin-top:8px">点上面的按钮试试他们的表情。考场右上角随时可关画面。</p>
         </div>
       </div>
-      <div class="card" id="ai-card">
-        <h3 style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none" id="ai-head" role="button" tabindex="0" aria-expanded="false">AI 增强（可选 · 用你自己的模型接口）<svg class="chev" id="ai-chev" aria-hidden="true"><use href="#i-back"/></svg></h3>
-        <div id="ai-body" style="display:none">
-          <p class="ai-sec">填一个 OpenAI 兼容接口（DeepSeek / 通义 / Kimi / 智谱 / 本地 Ollama 等）。密钥只保存在你本机浏览器：默认关掉标签页即清除，勾选「记住」才会写入本机 localStorage；请求由页面直连你填的地址，不经任何第三方，也不会进本页面的任何日志。地址请用 https 开头。若服务商不允许网页跨域调用（CORS），拉取和请求会失败，换服务商或用本地 Ollama 即可。</p>
+      <div class="wiz-step" data-step="1" style="display:none">
+        <div class="card" id="ai-card">
+          <h3 style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none" id="ai-head" role="button" tabindex="0" aria-expanded="false">AI 增强（可选 · 用你自己的模型接口）<svg class="chev" id="ai-chev" aria-hidden="true"><use href="#i-back"/></svg></h3>
+          <div id="ai-body" style="display:none">
+            <p class="ai-sec">有模型接口就填：选手发言每轮不重样、追问现场出、点评更贴你的原话。密钥只保存在你本机浏览器，请求直连你填的地址，不经任何第三方。没有接口就点下一步——本地模式离线可用，完全够练。</p>
+            <div class="field">
+              <label for="ai-base">接口地址 Base URL</label>
+              <input class="in" id="ai-base" type="url" placeholder="https://api.deepseek.com/v1" style="width:100%" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="ai-key">API Key</label>
+              <div style="display:flex;gap:8px">
+                <input class="in" id="ai-key" type="password" autocomplete="off" placeholder="sk-…（仅存本机）">
+                <button class="btn ghost" id="ai-clear" style="min-height:44px;padding:0 14px;font-size:13px">清除</button>
+              </div>
+              <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)"><input type="checkbox" id="ai-remember"> 记住密钥（写入本机 localStorage）</label>
+            </div>
+            <div class="field">
+              <label for="ai-model">模型</label>
+              <div style="display:flex;gap:8px">
+                <input class="in" id="ai-model" type="text" placeholder="如 deepseek-chat，或点「拉取」获取列表">
+                <button class="btn ghost" id="ai-fetch" style="min-height:44px;padding:0 14px;font-size:13px">拉取</button>
+              </div>
+              <select id="ai-model-list" class="in" style="display:none;width:100%;margin-top:8px" aria-label="从接口拉取的模型列表"></select>
+            </div>
+            <div class="field switchrow">
+              <span><span class="lab">AI 生成选手发言</span><br><span class="sub">每轮现场生成、不重样；失败自动用本地发言兜底</span></span>
+              <button type="button" class="toggle" id="ai-spk" role="switch" aria-checked="false" aria-label="AI 生成选手发言开关"></button>
+            </div>
+            <div class="field switchrow">
+              <span><span class="lab">AI 打分与点评</span><br><span class="sub">含现场生成追问；失败自动用本地规则兜底</span></span>
+              <button type="button" class="toggle" id="ai-sco" role="switch" aria-checked="false" aria-label="AI 打分开关"></button>
+            </div>
+            <div class="notice warn" id="ai-status" style="display:none">
+              <svg aria-hidden="true"><use href="#i-alert"/></svg>
+              <span id="ai-status-text"></span>
+            </div>
+          </div>
+        </div>
+        <div class="wiz-nav">
+          <button type="button" class="btn ghost" id="wiz-prev">上一步</button>
+          <button type="button" class="btn" id="wiz-next">下一步：考试类型</button>
+        </div>
+      </div>
+      <div class="wiz-step" data-step="2" style="display:none">
+        <div class="card">
           <div class="field">
-            <label for="ai-base">接口地址 Base URL</label>
-            <input class="in" id="ai-base" type="url" placeholder="https://api.deepseek.com/v1" style="width:100%" autocomplete="off">
+            <label id="topic-label">陈述题（模拟选手和你答同一道题）</label>
+            <div role="group" aria-labelledby="topic-label" id="topic-group"></div>
           </div>
           <div class="field">
-            <label for="ai-key">API Key</label>
-            <div style="display:flex;gap:8px">
-              <input class="in" id="ai-key" type="password" autocomplete="off" placeholder="sk-…（仅存本机）">
-              <button class="btn ghost" id="ai-clear" style="min-height:44px;padding:0 14px;font-size:13px">清除</button>
+            <label for="seat-val">我的发言位次（1–9）</label>
+            <div class="seat-row">
+              <div class="stepper">
+                <button type="button" id="seat-dec" aria-label="位次减一">−</button>
+                <span class="val num" id="seat-val" aria-live="polite">7</span>
+                <button type="button" id="seat-inc" aria-label="位次加一">＋</button>
+              </div>
+              <span style="font-size:12px;color:var(--muted)">默认第 7 位，即指南的基准打法</span>
             </div>
-            <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)"><input type="checkbox" id="ai-remember"> 记住密钥（写入本机 localStorage）</label>
           </div>
           <div class="field">
-            <label for="ai-model">模型</label>
-            <div style="display:flex;gap:8px">
-              <input class="in" id="ai-model" type="text" placeholder="如 deepseek-chat，或点「拉取」获取列表">
-              <button class="btn ghost" id="ai-fetch" style="min-height:44px;padding:0 14px;font-size:13px">拉取</button>
-            </div>
-            <select id="ai-model-list" class="in" style="display:none;width:100%;margin-top:8px" aria-label="从接口拉取的模型列表"></select>
+            <label id="dept-label">我的部门（用于生成发言与点评）</label>
+            <div class="chips" role="group" aria-labelledby="dept-label" id="dept-group"></div>
           </div>
           <div class="field switchrow">
-            <span><span class="lab">AI 生成选手发言</span><br><span class="sub">每轮现场生成、不重样；失败自动用本地发言兜底</span></span>
-            <button type="button" class="toggle" id="ai-spk" role="switch" aria-checked="false" aria-label="AI 生成选手发言开关"></button>
+            <span><span class="lab">语音播报</span><br><span class="sub">模拟选手与考官“开口说话”，关闭则静音快进</span></span>
+            <button type="button" class="toggle" id="tts-toggle" role="switch" aria-checked="true" aria-label="语音播报开关"></button>
           </div>
           <div class="field switchrow">
-            <span><span class="lab">AI 打分与点评</span><br><span class="sub">按同一份标准语义评分；失败自动用本地规则兜底</span></span>
-            <button type="button" class="toggle" id="ai-sco" role="switch" aria-checked="false" aria-label="AI 打分开关"></button>
+            <span><span class="lab">按住说话（语音输入）</span><br><span class="sub" id="sr-status">检测浏览器支持中…</span></span>
+            <button type="button" class="toggle" id="sr-toggle" role="switch" aria-checked="true" aria-label="语音输入开关"></button>
           </div>
-          <div class="notice warn" id="ai-status" style="display:none">
+          <div class="notice info" id="sr-notice" style="display:none">
             <svg aria-hidden="true"><use href="#i-alert"/></svg>
-            <span id="ai-status-text"></span>
+            <span id="sr-notice-text"></span>
           </div>
+        </div>
+        <div class="card">
+          <h3>考场规则</h3>
+          <ul class="rule-list">
+            <li><span class="no num">1</span><span>每人一个固定时段，到点就停——超时是实打实的减分项。</span></li>
+            <li><span class="no num">2</span><span>没有自由讨论和总结陈词，管好自己的角度就行。</span></li>
+          </ul>
+        </div>
+        <button class="btn block" id="btn-start-wiz" style="min-height:56px;font-size:18px">开始模拟面试</button>
+        <div class="wiz-nav">
+          <button type="button" class="btn ghost" id="wiz-prev2">上一步</button>
         </div>
       </div>
     </div>
@@ -1755,6 +1785,7 @@ function showReport(){
 
 /* ================= 事件绑定与初始化 ================= */
 function startRoom(){
+  try{ localStorage.setItem('iv_onboarded','1'); }catch(e){}
   Object.assign(state, {aborted:false, askPhase:false, keyboardMode:state.keyboardMode});
   state.topicIdx = settings.topicIdx>=0 ? settings.topicIdx : Math.floor(Math.random()*TOPICS.length);
   Object.assign(state, {seat:settings.seat, dept:settings.dept, tts:settings.tts, sr:settings.sr});
@@ -1785,6 +1816,7 @@ $('#sr-toggle').onclick = function(){
   state.keyboardMode = !settings.sr;
 };
 $('#btn-enter').onclick = ()=>{
+  if(!localStorage.getItem('iv_onboarded')){ openSetSheet(); return; }
   if(!srSupported()) settings.sr = false;
   startRoom();
 };
@@ -1898,9 +1930,18 @@ function bindAiCard(){
     $(sel).addEventListener('change', saveFromUi);
   });
 }
-/* ---- 设置面板 ---- */
+/* ---- 设置面板与首次引导 ---- */
+let wizStep = 0;
+function wizGo(n){
+  wizStep = Math.max(0, Math.min(2, n));
+  $$('#set-sheet .wiz-step').forEach(s=>{ s.style.display = (+s.dataset.step===wizStep)?'block':'none'; });
+  $$('#set-sheet .wdot').forEach((d,i)=>{ d.classList.toggle('on', i===wizStep); });
+  if(wizStep===1 && $('#ai-body').style.display==='none') toggleAiBody();
+  if(wizStep===0) renderPreview();
+}
 function openSetSheet(){
   renderPreview();
+  wizGo(localStorage.getItem('iv_onboarded') ? 2 : 0);
   $('#set-sheet').classList.add('on');
   $('#set-mask').classList.add('on');
   $('#btn-set-close').focus();
@@ -1909,6 +1950,20 @@ function closeSetSheet(){
   $('#set-sheet').classList.remove('on');
   $('#set-mask').classList.remove('on');
 }
+$('#btn-settings').addEventListener('click', openSetSheet);
+$('#btn-set-close').addEventListener('click', closeSetSheet);
+$('#set-mask').addEventListener('click', closeSetSheet);
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if($('#set-sheet').classList.contains('on')) closeSetSheet();
+    else if($('#sheet').classList.contains('on')) closeSheet();
+  }
+});
+$('#wiz-next').addEventListener('click', ()=>wizGo(wizStep+1));
+$('#wiz-prev').addEventListener('click', ()=>wizGo(wizStep-1));
+$('#wiz-prev2').addEventListener('click', ()=>wizGo(wizStep-1));
+$('#wiz-skip').addEventListener('click', ()=>{ closeSetSheet(); startRoom(); });
+$('#btn-start-wiz').addEventListener('click', ()=>{ closeSetSheet(); startRoom(); });
 $('#btn-settings').addEventListener('click', openSetSheet);
 $('#btn-set-close').addEventListener('click', closeSetSheet);
 $('#set-mask').addEventListener('click', closeSetSheet);
