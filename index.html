@@ -970,7 +970,9 @@ async function aiChat(messages, opts){
     });
     if(!res.ok) throw new Error('HTTP '+res.status+(res.status===402?'（余额不足或套餐未生效——体验计划接口应为 /step_plan/v1）':''));
     const data = await res.json();
-    const out = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    const msg0 = data.choices && data.choices[0] && data.choices[0].message;
+    let out = msg0 ? (msg0.content || msg0.reasoning_content || '') : '';
+    if(!out && msg0 && Array.isArray(msg0.content)) out = msg0.content.map(c => c.text || '').join('');
     if(!out) throw new Error('空响应');
     return String(out).trim();
   } finally { clearTimeout(to); }
@@ -996,7 +998,7 @@ function pregenAI(order, topic){
     const p = aiChat([
       {role:'system', content:spkSystemPrompt(topic.title, o.seat)},
       {role:'user', content:'这道陈述题：'+topic.title+'\n前面候选人已讲过的角度：'+angles.slice(0,i).concat(angles.slice(i+1)).join('、')+'\n请从不同或更深处切入。你所在部门是'+settings.dept+'。'}
-    ], {maxTokens:240, temperature:1.0, timeout:14000}).catch(()=>null);
+    ], {maxTokens:500, temperature:1.0, timeout:20000}).catch(()=>null);
     return Promise.race([p, sleep(15000).then(()=>null)]);
   });
 }
@@ -1004,7 +1006,7 @@ async function aiScoreCall(){
   const angles = (state.listenedBeforeUser||[]).map(s=>s.angle);
   const raw = await aiChat(
     aiScoreMessages(TOPICS[state.topicIdx].title, angles, state.userSpeech||'', state.userSecs||0, state.askQ, state.userAnswer, state.answerSecs),
-    {maxTokens:1100, temperature:0.4, timeout:45000});
+    {maxTokens:3500, temperature:0.4, timeout:90000});
   const j = extractJSON(raw);
   if(!j || !Array.isArray(j.dims) || j.dims.length!==6 || !Array.isArray(j.comments)) throw new Error('格式解析失败');
   return j;
@@ -1405,7 +1407,7 @@ async function aiAskCall(){
   const raw = await aiChat([
     {role:'system', content:'你是大学学生会留任面试的主考官，学长学姐身份，说话像平时开会提问那样自然。候选人刚陈述完，轮到你追问。请提一个真实、有点尖锐但不失礼貌的追问（15-40 字），方向：部员闹矛盾、学业冲突、上一届工作的不足、落选了怎么办、只录一人推荐谁、最大成长、活动冷场、接没做过的活。像随口问出来的，别像念稿子。只输出追问句本身，禁止引号、前缀、书面语和说明。'},
     {role:'user', content:'陈述题：'+TOPICS[state.topicIdx].title+'\n前面候选人的角度：'+((state.listenedBeforeUser||state.listened).map(s=>s.angle).join('、')||'无')+'\n候选人（第'+settings.seat+'位）的陈述：'+(state.userSpeech||'').slice(0,220)}
-  ], {maxTokens:90, temperature:1.0, timeout:20000});
+    ], {maxTokens:300, temperature:1.0, timeout:30000});
   const q = raw.replace(/^["「『]+|["」』]+$/g,'').split('\n').filter(x=>x.trim()).pop().trim();
   if(!q || q.length<8 || q.length>60) throw new Error('格式不符');
   return q;
